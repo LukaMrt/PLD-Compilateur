@@ -32,3 +32,11 @@
 *.app
 
 .DS_Store
+
+# Build artifacts
+compiler/ifcc
+compiler/build/
+compiler/generated/
+
+# Local platform config (use config-<platform>.mk as template)
+compiler/config.mk
