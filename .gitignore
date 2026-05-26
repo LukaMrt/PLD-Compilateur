@@ -40,3 +40,6 @@ compiler/generated/
 
 # Local platform config (use config-<platform>.mk as template)
 compiler/config.mk
+
+# Test runner output
+ifcc-test-output/
