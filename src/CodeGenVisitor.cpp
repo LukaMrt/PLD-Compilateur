@@ -10,8 +10,18 @@ antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx)
     std::cout << " main: \n";
 #endif
 
+    // Prologue
+    std::cout << "    # Prologue\n";
+    std::cout << "    push %rbp         # save %rbp on the stack\n";
+    std::cout << "    mov %rsp, %rbp    # define %rbp for the current function\n";
+    std::cout << "\n";
+    
     this->visit(ctx->return_stmt());
-
+    
+    // Epilogue
+    std::cout << "\n";
+    std::cout << "    # Epilogue\n";
+    std::cout << "    pop %rbp         # restore %rbp from the stack\n";
     std::cout << "    ret\n";
 
     return 0;
