@@ -76,6 +76,15 @@ gui:
 	java -cp $(ANTLRJAR):build org.antlr.v4.gui.TestRig ifcc axiom -gui $(FILE)
 
 ##########################################
+# generate and view the assembly for a source file
+# Usage: `make asm FILE=path/to/your/file.c`
+asm: ifcc
+	@mkdir -p build
+	@./build/ifcc $(FILE) > build/$(notdir $(basename $(FILE))).s
+	@echo ">>> Assembly written to build/$(notdir $(basename $(FILE))).s"
+	@cat build/$(notdir $(basename $(FILE))).s
+
+##########################################
 test: ifcc
 	@echo ">>> Running tests..."
 	@python3 tests/ifcc-test.py tests/cases
@@ -103,4 +112,7 @@ docker-test: docker-build
 docker-clean: docker-build
 	@$(DOCKER_RUN) make clean
 
-.PHONY: docker-build docker docker-test docker-clean
+docker-asm: docker-build
+	@$(DOCKER_RUN) make asm FILE=$(FILE)
+
+.PHONY: docker-build docker docker-test docker-clean docker-asm
