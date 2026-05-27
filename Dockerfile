@@ -3,7 +3,7 @@
 #
 # Build :  docker build -t ifcc-dev .
 # Usage :  docker run --rm -v "$PWD":/work -w /work ifcc-dev make test
-FROM debian:stable-slim
+FROM --platform=linux/amd64 debian:stable-slim
 
 # ANTLR reste en 4.13.2 : c'est la version figée dans config/config-wsl-2025.mk
 # (nom du jar) que le Makefile réutilise tel quel dans le conteneur.
