@@ -29,19 +29,23 @@ OBJECTS=build/ifccBaseVisitor.o \
 
 ifcc: $(OBJECTS)
 	@mkdir -p build
-	$(CC) $(LDFLAGS) build/*.o $(ANTLRLIB) -o build/ifcc
+	@echo ">>> Linking build/ifcc..."
+	@$(CC) $(LDFLAGS) build/*.o $(ANTLRLIB) -o build/ifcc
+	@echo ">>> Build complete: build/ifcc"
 
 ##########################################
 # compile our hand-written C++ code: main(), CodeGenVisitor, etc.
 build/%.o: src/%.cpp generated/ifccParser.cpp
 	@mkdir -p build
-	$(CC) $(CCFLAGS) -MMD -o $@ $<
+	@echo "  Compiling $<..."
+	@$(CC) $(CCFLAGS) -MMD -o $@ $<
 
 ##########################################
 # compile all the antlr-generated C++
 build/%.o: generated/%.cpp
 	@mkdir -p build
-	$(CC) $(CCFLAGS) -MMD -o $@ $<
+	@echo "  Compiling [generated] $<..."
+	@$(CC) $(CCFLAGS) -MMD -o $@ $<
 
 # automagic dependency management: `gcc -MMD` generates all the .d files for us
 -include build/*.d
@@ -54,7 +58,9 @@ generated/ifccVisitor.cpp: generated/ifccParser.cpp
 generated/ifccBaseVisitor.cpp: generated/ifccParser.cpp
 generated/ifccParser.cpp: grammar/ifcc.g4
 	@mkdir -p generated
-	cd grammar && java -jar $(ANTLRJAR) -visitor -no-listener -Dlanguage=Cpp -o ../generated ifcc.g4
+	@echo ">>> Generating parser from grammar/ifcc.g4..."
+	@cd grammar && java -jar $(ANTLRJAR) -visitor -no-listener -Dlanguage=Cpp -o ../generated ifcc.g4
+	@echo "  Parser generated in generated/"
 
 .PRECIOUS: generated/ifcc%.cpp
 
@@ -70,9 +76,11 @@ gui:
 	java -cp $(ANTLRJAR):build org.antlr.v4.gui.TestRig ifcc axiom -gui $(FILE)
 
 ##########################################
-# delete all machine-generated files
 test: ifcc
-	python3 tests/ifcc-test.py tests/cases
+	@echo ">>> Running tests..."
+	@python3 tests/ifcc-test.py tests/cases
 
 clean:
-	rm -rf build generated ifcc-test-output
+	@echo ">>> Cleaning build artifacts..."
+	@rm -rf build generated ifcc-test-output
+	@echo "  Done."
