@@ -84,3 +84,23 @@ clean:
 	@echo ">>> Cleaning build artifacts..."
 	@rm -rf build generated ifcc-test-output
 	@echo "  Done."
+
+##########################################
+# Docker : exécute make/make test/make clean dans le conteneur ifcc-dev.
+# Le code est monté depuis l'hôte, seule la compilation tourne dans l'image.
+DOCKER_IMAGE := ifcc-dev
+DOCKER_RUN := docker run --rm -v "$(CURDIR)":/work -w /work $(DOCKER_IMAGE)
+
+docker-build:
+	@docker build -t $(DOCKER_IMAGE) .
+
+docker: docker-build
+	@$(DOCKER_RUN) make
+
+docker-test: docker-build
+	@$(DOCKER_RUN) make test
+
+docker-clean: docker-build
+	@$(DOCKER_RUN) make clean
+
+.PHONY: docker-build docker docker-test docker-clean

@@ -216,7 +216,10 @@ for inputfilename in inputfilenames:
         exit(1)
 
 ## We're going to copy every test-case in its own subdir of ifcc-test-output
-os.mkdir(pld_base_dir+'/../ifcc-test-output')
+output_dir = pld_base_dir+'/../ifcc-test-output'
+if os.path.isdir(output_dir):
+    shutil.rmtree(output_dir)
+os.mkdir(output_dir)
 
 jobs=[]
 

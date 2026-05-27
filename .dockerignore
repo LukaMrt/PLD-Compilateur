@@ -1,0 +1,5 @@
+build/
+generated/
+ifcc-test-output/
+.git/
+.DS_Store
