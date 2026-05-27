@@ -84,6 +84,13 @@ asm: ifcc
 	@echo ">>> Assembly written to build/$(notdir $(basename $(FILE))).s"
 	@cat build/$(notdir $(basename $(FILE))).s
 
+# generate GCC assembly via Docker (x86-64) for comparison with ifcc output
+# Usage: `make docker-gcc-asm FILE=tests/cases/1_return42.c`
+docker-gcc-asm: docker-build
+	@$(DOCKER_RUN) sh -c "mkdir -p build && gcc -S -o build/$(notdir $(basename $(FILE))).gcc.s $(FILE)"
+	@echo ">>> GCC assembly written to build/$(notdir $(basename $(FILE))).gcc.s"
+	@cat build/$(notdir $(basename $(FILE))).gcc.s
+
 ##########################################
 test: ifcc
 	@echo ">>> Running tests..."
@@ -115,4 +122,4 @@ docker-clean: docker-build
 docker-asm: docker-build
 	@$(DOCKER_RUN) make asm FILE=$(FILE)
 
-.PHONY: docker-build docker docker-test docker-clean docker-asm
+.PHONY: docker-build docker docker-test docker-clean docker-asm docker-gcc-asm
