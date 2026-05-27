@@ -24,7 +24,8 @@ def run_command(string, logfile=None, toscreen=False):
     
     process=subprocess.Popen(string,shell=True,
                              stderr=subprocess.STDOUT,stdout=subprocess.PIPE,
-                             text=True,bufsize=0)
+                             encoding='utf-8',errors='backslashreplace',
+                             bufsize=0)
     if logfile:
         logfile=open(logfile,'w')
     
@@ -271,17 +272,17 @@ for jobname in jobs:
     os.chdir(jobname)
     
     ## Reference compiler = GCC
-    gccstatus=run_command("gcc -S -o asm-gcc.s input.c", "gcc-compile.txt")
+    gccstatus=run_command("gcc -S -o gcc-asm.s input.c", "gcc-1-compile.txt")
     if gccstatus == 0:
         # test-case is a valid program. we should run it
-        gccstatus=run_command("gcc -o exe-gcc asm-gcc.s", "gcc-link.txt")
+        gccstatus=run_command("gcc -o exe-gcc gcc-asm.s", "gcc-2-link.txt")
     if gccstatus == 0: # then both compile and link stage went well
-        exegccstatus=run_command("./exe-gcc", "gcc-execute.txt")
+        exegccstatus=run_command("./exe-gcc", "gcc-3-execute.txt")
         if args.verbose >=2:
-            dumpfile("gcc-execute.txt")
+            dumpfile("gcc-3-execute.txt")
             
     ## IFCC compiler
-    ifccstatus=run_command(f'{pld_base_dir}/compiler/ifcc input.c > asm-ifcc.s', 'ifcc-compile.txt')
+    ifccstatus=run_command(f'{pld_base_dir}/compiler/ifcc input.c > ifcc-asm.s', 'ifcc-1-compile.txt')
     
     if gccstatus != 0 and ifccstatus != 0:
         ## ifcc correctly rejects invalid program -> test-case ok
@@ -297,33 +298,33 @@ for jobname in jobs:
         print("TEST FAIL (your compiler rejects a valid program)")
         all_ok=False
         if args.verbose:
-            dumpfile("asm-ifcc.s")       # stdout of ifcc
-            dumpfile("ifcc-compile.txt") # stderr of ifcc
+            dumpfile("ifcc-asm.s")       # stdout of ifcc
+            dumpfile("ifcc-1-compile.txt") # stderr of ifcc
         continue
     else:
         ## ifcc accepts to compile valid program -> let's link it
-        ldstatus=run_command("gcc -o exe-ifcc asm-ifcc.s", "ifcc-link.txt")
+        ldstatus=run_command("gcc -o exe-ifcc ifcc-asm.s", "ifcc-2-link.txt")
         if ldstatus:
             print("TEST FAIL (your compiler produces incorrect assembly)")
             all_ok=False
             if args.verbose:
-                dumpfile("asm-ifcc.s")
-                dumpfile("ifcc-link.txt")
+                dumpfile("ifcc-asm.s")
+                dumpfile("ifcc-2-link.txt")
             continue
 
     ## both compilers  did produce an  executable, so now we  run both
     ## these executables and compare the results.
         
-    run_command("./exe-ifcc", "ifcc-execute.txt")
-    if open("gcc-execute.txt").read() != open("ifcc-execute.txt").read() :
+    run_command("./exe-ifcc", "ifcc-3-execute.txt")
+    if open("gcc-3-execute.txt").read() != open("ifcc-3-execute.txt").read() :
         print("TEST FAIL (different results at execution)")
         all_ok=False
 
         if args.verbose:
             print("GCC:")
-            dumpfile("gcc-execute.txt")
+            dumpfile("gcc-3-execute.txt")
             print("you:")
-            dumpfile("ifcc-execute.txt")
+            dumpfile("ifcc-3-execute.txt")
         continue
 
     ## last but not least

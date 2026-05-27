@@ -39,6 +39,12 @@ int main(int argn, const char **argv)
 
   tokens.fill();
 
+  if(lexer.getNumberOfSyntaxErrors() != 0)
+  {
+      cerr << "error: syntax error during lexing" << endl;
+      exit(1);
+  }
+
   ifccParser parser(&tokens);
   tree::ParseTree* tree = parser.axiom();
 

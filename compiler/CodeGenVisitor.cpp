@@ -22,11 +22,7 @@ antlrcpp::Any CodeGenVisitor::visitReturn_stmt(ifccParser::Return_stmtContext *c
 {
     int retval = stoi(ctx->CONST()->getText());
 
-    #ifdef __aarch64__
-    std::cout << "    mov w0, #" << retval << "\n";
-    #else
-    std::cout << "    movl $" << retval << ", %eax\n";
-    #endif
+    std::cout << "    movl $"<<retval<<", %eax\n" ;
 
     return 0;
 }
