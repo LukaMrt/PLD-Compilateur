@@ -99,13 +99,13 @@ if args.debug:
     print("ifcc-test.py: "+os.path.dirname(__file__))
 
 # cleanup stale output directory
-if os.path.isdir(f'{pld_base_dir}/ifcc-test-output'):
+if os.path.isdir(f'{pld_base_dir}/../ifcc-test-output'):
     run_command(f'rm -rf {pld_base_dir}/ifcc-test-output')
 
 # Ensure that the `ifcc` executable itself is up-to-date
-makestatus=run_command(f'cd {pld_base_dir}/compiler; make --question ifcc')
+makestatus=run_command(f'cd {pld_base_dir}/..; make --question build/ifcc')
 if makestatus: # updates are needed
-    makestatus=run_command(f'cd {pld_base_dir}/compiler; make ifcc',toscreen=True) # this time we run `make` for real
+    makestatus=run_command(f'cd {pld_base_dir}/..; make ifcc',toscreen=True) # this time we run `make` for real
     if makestatus: # if `make` failed, we fail too
         if os.path.exists("ifcc"): # and we remove any out-of-date compiler (to reduce chance of confusion)
             os.unlink("ifcc")
@@ -141,9 +141,9 @@ if args.S or args.c or args.output:
         if args.output[-2:] != ".s":
             print("error: output file name must end with '.s'")
             exit(1)
-        ifccstatus=run_command(f'{pld_base_dir}/compiler/ifcc {inputfilename} > {args.output}')
+        ifccstatus=run_command(f'{pld_base_dir}/../build/ifcc {inputfilename} > {args.output}')
         if ifccstatus: # let's show error messages on screen
-            exit(run_command(f'{pld_base_dir}/compiler/ifcc {inputfilename}',toscreen=True))
+            exit(run_command(f'{pld_base_dir}/../build/ifcc {inputfilename}',toscreen=True))
         else:
             exit(0)
 
@@ -152,9 +152,9 @@ if args.S or args.c or args.output:
             print("error: output file name must end with '.o'")
             exit(1)
         asmname=args.output[:-2]+".s"
-        ifccstatus=run_command(f'{pld_base_dir}/compiler/ifcc {inputfilename} > {asmname}')
+        ifccstatus=run_command(f'{pld_base_dir}/../build/ifcc {inputfilename} > {asmname}')
         if ifccstatus: # let's show error messages on screen
-            exit(run_command(f'{pld_base_dir}/compiler/ifcc {inputfilename}',toscreen=True))
+            exit(run_command(f'{pld_base_dir}/../build/ifcc {inputfilename}',toscreen=True))
         exit(run_command(f'gcc -c -o {args.output} {asmname}',toscreen=True))
         
     else: # produce an executable
@@ -162,9 +162,9 @@ if args.S or args.c or args.output:
             print("error: incorrect name for an executable: "+args.output)
             exit(1)
         asmname=args.output+".s"
-        ifccstatus=run_command(f'{pld_base_dir}/compiler/ifcc {inputfilename} > {asmname}')
+        ifccstatus=run_command(f'{pld_base_dir}/../build/ifcc {inputfilename} > {asmname}')
         if ifccstatus:
-            exit(run_command(f'{pld_base_dir}/compiler/ifcc {inputfilename}', toscreen=True))
+            exit(run_command(f'{pld_base_dir}/../build/ifcc {inputfilename}', toscreen=True))
         exit(run_command(f'gcc -o {args.output} {asmname}'))
 
     # we should never end up here
@@ -216,7 +216,7 @@ for inputfilename in inputfilenames:
         exit(1)
 
 ## We're going to copy every test-case in its own subdir of ifcc-test-output
-os.mkdir(pld_base_dir+'/ifcc-test-output')
+os.mkdir(pld_base_dir+'/../ifcc-test-output')
 
 jobs=[]
 
@@ -239,15 +239,15 @@ for inputfilename in inputfilenames:
     if args.debug>=2:
         print("debug: subdir="+subdirname)
         
-    os.mkdir(pld_base_dir+'/ifcc-test-output/'+subdirname)
-    shutil.copyfile(inputfilename,pld_base_dir+'/ifcc-test-output/'+subdirname+'/input.c')
+    os.mkdir(pld_base_dir+'/../ifcc-test-output/'+subdirname)
+    shutil.copyfile(inputfilename,pld_base_dir+'/../ifcc-test-output/'+subdirname+'/input.c')
     jobs.append(subdirname)
 
 ## eliminate duplicate paths from the 'jobs' list
 unique_jobs=[]
 for j in jobs:
     for d in unique_jobs:
-        if os.path.samefile(pld_base_dir+'/ifcc-test-output/'+j,pld_base_dir+'/ifcc-test-output/'+d):
+        if os.path.samefile(pld_base_dir+'/../ifcc-test-output/'+j,pld_base_dir+'/../ifcc-test-output/'+d):
             break # and skip the 'else' branch
     else:
         unique_jobs.append(j)
@@ -266,7 +266,7 @@ if args.debug:
 all_ok=True
 
 for jobname in jobs:
-    os.chdir(f'{pld_base_dir}/ifcc-test-output')
+    os.chdir(f'{pld_base_dir}/../ifcc-test-output')
 
     print('TEST-CASE: '+jobname)
     os.chdir(jobname)
@@ -282,7 +282,7 @@ for jobname in jobs:
             dumpfile("gcc-3-execute.txt")
             
     ## IFCC compiler
-    ifccstatus=run_command(f'{pld_base_dir}/compiler/ifcc input.c > ifcc-asm.s', 'ifcc-1-compile.txt')
+    ifccstatus=run_command(f'{pld_base_dir}/../build/ifcc input.c > ifcc-asm.s', 'ifcc-1-compile.txt')
     
     if gccstatus != 0 and ifccstatus != 0:
         ## ifcc correctly rejects invalid program -> test-case ok
