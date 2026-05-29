@@ -73,7 +73,7 @@ FILE ?= tests/cases/1_return42.c
 gui:
 	@mkdir -p generated build
 	java -jar $(ANTLRJAR) -Dlanguage=Java -o generated grammar/ifcc.g4
-	javac -cp $(ANTLRJAR) -d build generated/*.java
+	find generated -name "*.java" | xargs javac -cp $(ANTLRJAR) -d build
 	java -cp $(ANTLRJAR):build org.antlr.v4.gui.TestRig ifcc axiom -gui $(FILE)
 
 ##########################################
