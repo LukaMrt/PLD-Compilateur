@@ -115,7 +115,7 @@ docker: docker-build
 	@$(DOCKER_RUN) make
 
 docker-test: docker-build
-	@$(DOCKER_RUN) make test
+	@$(DOCKER_RUN) make test | python3 tests/ifcc-pretty.py
 
 docker-clean: docker-build
 	@$(DOCKER_RUN) make clean
