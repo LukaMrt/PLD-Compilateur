@@ -42,23 +42,23 @@ return_statement
 
 INT : 'int' ;
 
-MAIN : 'main' ;
+MAIN   : 'main' ;
 RETURN : 'return' ;
 
-EQUAL : '=' ;
-TIMES : '*' ;
-DIVIDE : '/' ;
-MODULO :  '%' ;
-PLUS :  '+' ;
-MINUS : '-' ;
-BRACKET_OPEN : '(' ;
-BRACKET_CLOSE : ')' ;
-CURLY_BRASE_OPEN : '{' ;
+PLUS              : '+' ;
+TIMES             : '*' ;
+MINUS             : '-' ;
+EQUAL             : '=' ;
+DIVIDE            : '/' ;
+MODULO            : '%' ;
+SEMI_COLON        : ';' ;
+BRACKET_OPEN      : '(' ;
+BRACKET_CLOSE     : ')' ;
+CURLY_BRASE_OPEN  : '{' ;
 CURLY_BRASE_CLOSE : '}' ;
-SEMI_COLON : ';' ;
 
-CONST : [0-9]+ ;
-VAR : [a-zA-Z_][a-zA-Z0-9_]* ;
-COMMENT : '/*' .*? '*/' -> skip ;
+WS        : [ \t\r\n] -> channel(HIDDEN);
+VAR       : [a-zA-Z_][a-zA-Z0-9_]* ;
+CONST     : [0-9]+ ;
+COMMENT   : '/*' .*? '*/' -> skip ;
 DIRECTIVE : '#' .*? '\n' -> skip ;
-WS    : [ \t\r\n] -> channel(HIDDEN);
