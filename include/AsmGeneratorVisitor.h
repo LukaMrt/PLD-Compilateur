@@ -7,9 +7,9 @@
 #include <map>
 #include <string>
 
-class CodeGenVisitor : public ifccBaseVisitor {
+class AsmGeneratorVisitor : public ifccBaseVisitor {
     public:
-        CodeGenVisitor(const std::map<std::string, SymbolTableVisitor::VariableInfo> &symbolTable)
+        AsmGeneratorVisitor(const std::map<std::string, SymbolTableVisitor::VariableInfo> &symbolTable)
             : symbolTable(symbolTable) {}
 
         virtual antlrcpp::Any visitProg(ifccParser::ProgContext *ctx) override;

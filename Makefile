@@ -25,7 +25,7 @@ OBJECTS=build/ifccBaseVisitor.o \
 	build/ifccVisitor.o \
 	build/ifccParser.o \
 	build/main.o \
-	build/CodeGenVisitor.o \
+	build/AsmGeneratorVisitor.o \
 	build/SymbolTableVisitor.o
 
 ifcc: $(OBJECTS)
@@ -35,7 +35,7 @@ ifcc: $(OBJECTS)
 	@echo ">>> Build complete: build/ifcc"
 
 ##########################################
-# compile our hand-written C++ code: main(), CodeGenVisitor, etc.
+# compile our hand-written C++ code: main(), AsmGeneratorVisitor, etc.
 build/%.o: src/%.cpp generated/ifccParser.cpp
 	@mkdir -p build
 	@echo "  Compiling $<..."

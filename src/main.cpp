@@ -8,7 +8,7 @@
 #include "generated/ifccParser.h"
 #include "generated/ifccBaseVisitor.h"
 
-#include "CodeGenVisitor.h"
+#include "AsmGeneratorVisitor.h"
 
 using namespace antlr4;
 using namespace std;
@@ -56,7 +56,7 @@ int main(int argn, const char **argv)
 
     SymbolTableVisitor symbolTableVisitor;
     symbolTableVisitor.visit(tree);
-    CodeGenVisitor v = CodeGenVisitor(symbolTableVisitor.getSymbolTable());
+    AsmGeneratorVisitor v = AsmGeneratorVisitor(symbolTableVisitor.getSymbolTable());
     v.visit(tree);
 
     return 0;

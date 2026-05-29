@@ -1,6 +1,6 @@
-#include "CodeGenVisitor.h"
+#include "AsmGeneratorVisitor.h"
 
-antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx)
+antlrcpp::Any AsmGeneratorVisitor::visitProg(ifccParser::ProgContext *ctx)
 {
     std::cout << ".globl main\n";
     std::cout << " main: \n";
@@ -25,7 +25,7 @@ antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext *ctx)
     return 0;
 }
 
-antlrcpp::Any CodeGenVisitor::visitVariable_creation(ifccParser::Variable_creationContext *ctx)
+antlrcpp::Any AsmGeneratorVisitor::visitVariable_creation(ifccParser::Variable_creationContext *ctx)
 {
     std::string varName = ctx->VAR()->getText();
     int offset = symbolTable.at(varName).offset;
@@ -56,7 +56,7 @@ antlrcpp::Any CodeGenVisitor::visitVariable_creation(ifccParser::Variable_creati
     return 0;
 }
 
-antlrcpp::Any CodeGenVisitor::visitVariable_assignment(ifccParser::Variable_assignmentContext *ctx)
+antlrcpp::Any AsmGeneratorVisitor::visitVariable_assignment(ifccParser::Variable_assignmentContext *ctx)
 {
     if (ctx->variable_creation())
     {
@@ -87,7 +87,7 @@ antlrcpp::Any CodeGenVisitor::visitVariable_assignment(ifccParser::Variable_assi
     return 0;
 }
 
-antlrcpp::Any CodeGenVisitor::visitReturn_statement(ifccParser::Return_statementContext *ctx)
+antlrcpp::Any AsmGeneratorVisitor::visitReturn_statement(ifccParser::Return_statementContext *ctx)
 {
     auto expr = ctx->expression();
 
