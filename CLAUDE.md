@@ -35,8 +35,12 @@ source .c  →  ANTLR lexer/parser  →  parse tree  →  CodeGenVisitor  →  a
 
 **Grammar** (`grammar/ifcc.g4`) defines the language. ANTLR generates C++ lexer/parser/visitor stubs into `generated/` at build time. Never edit files in `generated/` — they are regenerated on every `make clean && make`.
 
-**Visitor pattern**: `CodeGenVisitor` (in `src/` and `include/`) extends the generated `ifccBaseVisitor`. Each `visitXxx` method corresponds to a grammar rule and emits assembly directly to `stdout`. To add language features: extend the grammar in `ifcc.g4`, then override the corresponding `visitXxx` method in `CodeGenVisitor`.
+**Two-pass visitor pipeline**: `main.cpp` runs two visitors in sequence:
+1. `SymbolTableVisitor` — first pass, builds a `map<string, VariableInfo>` (offset on stack, used flag) from variable declarations
+2. `AsmGeneratorVisitor` — second pass, receives the symbol table and emits x86-64 AT&T assembly to `stdout`
 
-**Cross-platform assembly**: `CodeGenVisitor.cpp` uses `#ifdef __aarch64__` to emit ARM64 instructions (macOS Apple Silicon) vs x86-64 AT&T syntax (Linux). The entry point label also differs: `_main` on macOS, `main` on Linux (`#ifdef __APPLE__`).
+Both visitors (in `src/` and `include/`) extend the generated `ifccBaseVisitor`. Each `visitXxx` method corresponds to a grammar rule. To add language features: extend the grammar in `ifcc.g4`, add a `visitXxx` override in both visitors as needed.
+
+**Assembly output**: x86-64 AT&T syntax only. Arithmetic uses `push`/`pop` to save intermediate values; division/modulo use `idivl` with `cdq` for sign-extension.
 
 **Testing**: `tests/ifcc-test.py` compiles each `.c` in `tests/cases/` with both GCC and `build/ifcc`, runs both executables, and compares exit codes. A test passes when both compilers agree (both accept or both reject the program, and produce the same result).
