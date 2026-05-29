@@ -54,7 +54,9 @@ int main(int argn, const char **argv)
         exit(1);
     }
 
-    CodeGenVisitor v;
+    SymbolTableVisitor symbolTableVisitor;
+    symbolTableVisitor.visit(tree);
+    CodeGenVisitor v = CodeGenVisitor(symbolTableVisitor.getSymbolTable());
     v.visit(tree);
 
     return 0;
