@@ -32,19 +32,7 @@ antlrcpp::Any SymbolTableVisitor::visitVariable_assignment(ifccParser::Variable_
         exit(1);
     }
 
-    if (ctx->expression())
-    {
-        auto expr = ctx->expression();
-        if (expr->VAR())
-        {
-            std::string targetVarName = expr->VAR()->getText();
-            if (!isDeclared(targetVarName))
-            {
-                std::cerr << "Error: variable '" << targetVarName << "' not declared." << std::endl;
-                exit(1);
-            }
-        }
-    }
+    this->visit(ctx->expression());
 
     return 0;
 }
@@ -65,21 +53,16 @@ antlrcpp::Any SymbolTableVisitor::visitVariable_creation(ifccParser::Variable_cr
     return 0;
 }
 
-antlrcpp::Any SymbolTableVisitor::visitExpression(ifccParser::ExpressionContext *ctx)
+antlrcpp::Any SymbolTableVisitor::visitVar_expression(ifccParser::Var_expressionContext *ctx)
 {
-    if (ctx->VAR())
+    std::string varName = ctx->VAR()->getText();
+
+    if (!isDeclared(varName))
     {
-        std::string varName = ctx->VAR()->getText();
-
-        if (!isDeclared(varName))
-        {
-            std::cerr << "Error: variable '" << varName << "' not declared." << std::endl;
-            exit(1);
-        }
-
-        symbolTable[varName].used = true;
-        return symbolTable[varName].offset;
+        std::cerr << "Error: variable '" << varName << "' not declared." << std::endl;
+        exit(1);
     }
 
-    return 0;
+    symbolTable[varName].used = true;
+    return symbolTable[varName].offset;
 }

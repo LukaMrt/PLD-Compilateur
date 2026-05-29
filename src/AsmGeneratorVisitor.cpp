@@ -38,20 +38,8 @@ antlrcpp::Any AsmGeneratorVisitor::visitVariable_creation(ifccParser::Variable_c
         return 0;
     }
 
-    if (expr && expr->CONST())
-    {
-        int value = stoi(expr->CONST()->getText());
-        std::cout << "    movl $" << value << ", " << offset << "(%rbp)  # initialize variable " << varName << " with value " << value << "\n";
-    }
-
-    if (expr && expr->VAR())
-    {
-        std::string targetVarName = expr->VAR()->getText();
-        int targetOffset = symbolTable.at(targetVarName).offset;
-        std::cout << "    movl " << targetOffset << "(%rbp), %eax  # load value of variable " << targetVarName << " into %eax (1/2)\n";
-        std::cout << "    movl %eax, " << offset << "(%rbp)  # initialize variable " << varName << " with value of variable " << targetVarName << " (2/2)\n";
-    }
-
+    this->visit(expr);
+    std::cout << "    movl %eax, " << offset << "(%rbp)\n";
 
     return 0;
 }
@@ -66,42 +54,28 @@ antlrcpp::Any AsmGeneratorVisitor::visitVariable_assignment(ifccParser::Variable
     std::string varName = ctx->VAR()->getText();
     int offset = symbolTable.at(varName).offset;
 
-    auto expr = ctx->expression();
-
-    if (expr->CONST())
-    {
-        int value = stoi(expr->CONST()->getText());
-        std::cout << "    movl $" << value << ", " << offset << "(%rbp)  # assign value " << value << " to variable " << varName << "\n";
-        return 0;
-    }
-
-    if (expr->VAR())
-    {
-        std::string targetVarName = expr->VAR()->getText();
-        int targetOffset = symbolTable.at(targetVarName).offset;
-        std::cout << "    movl " << targetOffset << "(%rbp), %eax  # load value of variable " << targetVarName << " into %eax (1/2)\n";
-        std::cout << "    movl %eax, " << offset << "(%rbp)  # assign value of variable " << targetVarName << " to variable " << varName << " (2/2)\n";
-        return 0;
-    }
+    this->visit(ctx->expression());
+    std::cout << "    movl %eax, " << offset << "(%rbp)\n";
 
     return 0;
 }
 
 antlrcpp::Any AsmGeneratorVisitor::visitReturn_statement(ifccParser::Return_statementContext *ctx)
 {
-    auto expr = ctx->expression();
+    this->visit(ctx->expression());
+    return 0;
+}
 
-    if (expr->CONST())
-    {
-        int retval = stoi(expr->CONST()->getText());
-        std::cout << "    movl $" << retval << ", %eax  # load return value " << retval << " into %eax\n";
-    }
-    else if (expr->VAR())
-    {
-        std::string varName = expr->VAR()->getText();
-        int offset = symbolTable.at(varName).offset;
-        std::cout << "    movl " << offset << "(%rbp), %eax  # load return value from variable " << varName << " into %eax\n";
-    }
+antlrcpp::Any AsmGeneratorVisitor::visitConst_expression(ifccParser::Const_expressionContext *ctx)
+{
+    int value = std::stoi(ctx->CONST()->getText());
+    std::cout << "    movl $" << value << ", %eax\n";
+    return 0;
+}
 
+antlrcpp::Any AsmGeneratorVisitor::visitVar_expression(ifccParser::Var_expressionContext *ctx)
+{
+    int offset = symbolTable.at(ctx->VAR()->getText()).offset;
+    std::cout << "    movl " << offset << "(%rbp), %eax\n";
     return 0;
 }
