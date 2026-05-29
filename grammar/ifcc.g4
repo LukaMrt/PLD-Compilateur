@@ -24,15 +24,12 @@ variable_creation
     ;
 
 expression
-    : MINUS expression                           # unary_minus_operation
-    | expression TIMES expression                # multiply_expression
-    | expression DIVIDE expression               # divide_expression
-    | expression MODULO expression               # modulo_expression
-    | expression PLUS expression                 # add_expression
-    | expression MINUS expression                # subtract_expression
-    | BRACKET_OPEN expression BRACKET_CLOSE      # bracketed_expression
-    | CONST                                      # const_expression
-    | VAR                                        # var_expression
+    : MINUS expression                                  # unary_minus_operation
+    | expression op=(TIMES | DIVIDE | MODULO) expression # multiplicative_expression
+    | expression op=(PLUS | MINUS) expression           # additive_expression
+    | BRACKET_OPEN expression BRACKET_CLOSE             # bracketed_expression
+    | CONST                                             # const_expression
+    | VAR                                               # var_expression
     ;
 
 return_statement
