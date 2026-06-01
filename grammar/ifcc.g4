@@ -5,7 +5,7 @@ axiom
     ;
 
 prog
-    : INT MAIN BRACKET_OPEN BRACKET_CLOSE CURLY_BRASE_OPEN statement+ CURLY_BRASE_CLOSE
+    : INT MAIN BRACKET_OPEN BRACKET_CLOSE CURLY_BRACE_OPEN statement+ CURLY_BRACE_CLOSE
     ;
 
 statement
@@ -33,7 +33,8 @@ expression
     ;
 
 return_statement
-    : RETURN expression ;
+    : RETURN expression
+    ;
 
 
 
@@ -51,8 +52,8 @@ MODULO            : '%' ;
 SEMI_COLON        : ';' ;
 BRACKET_OPEN      : '(' ;
 BRACKET_CLOSE     : ')' ;
-CURLY_BRASE_OPEN  : '{' ;
-CURLY_BRASE_CLOSE : '}' ;
+CURLY_BRACE_OPEN  : '{' ;
+CURLY_BRACE_CLOSE : '}' ;
 
 WS        : [ \t\r\n] -> channel(HIDDEN);
 VAR       : [a-zA-Z_][a-zA-Z0-9_]* ;
