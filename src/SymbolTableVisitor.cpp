@@ -39,17 +39,17 @@ antlrcpp::Any SymbolTableVisitor::visitVariable_assignment(ifccParser::Variable_
 
 antlrcpp::Any SymbolTableVisitor::visitVariable_creation(ifccParser::Variable_creationContext *ctx)
 {
-    std::string varName = ctx->VAR()->getText();
-
-    if (isDeclared(varName))
+    for (auto varToken : ctx->VAR())
     {
-        std::cerr << "Error: variable '" << varName << "' already declared." << std::endl;
-        exit(1);
+        std::string varName = varToken->getText();
+        if (isDeclared(varName))
+        {
+            std::cerr << "Error: variable '" << varName << "' already declared." << std::endl;
+            exit(1);
+        }
+        symbolTable[varName] = {nextOffset, false};
+        nextOffset -= 4;
     }
-
-    symbolTable[varName] = {nextOffset, false};
-    nextOffset -= 4;
-
     return 0;
 }
 

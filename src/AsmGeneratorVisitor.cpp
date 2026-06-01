@@ -37,19 +37,21 @@ antlrcpp::Any AsmGeneratorVisitor::visitProg(ifccParser::ProgContext *ctx)
 
 antlrcpp::Any AsmGeneratorVisitor::visitVariable_creation(ifccParser::Variable_creationContext *ctx)
 {
-    std::string varName = ctx->VAR()->getText();
-    int offset = symbolTable.at(varName).offset;
-
     auto expr = ctx->expression();
 
-    if (!expr)
+    if (expr)
     {
-        std::cout << "    movl $0, " << offset << "(%rbp)  # initialize variable " << varName << " with default value 0\n";
+        std::string varName = ctx->VAR(0)->getText();
+        this->visit(expr);
+        std::cout << "    movl %eax, " << symbolTable.at(varName).offset << "(%rbp)\n";
         return 0;
     }
 
-    this->visit(expr);
-    std::cout << "    movl %eax, " << offset << "(%rbp)\n";
+    for (auto varToken : ctx->VAR())
+    {
+        std::string varName = varToken->getText();
+        std::cout << "    movl $0, " << symbolTable.at(varName).offset << "(%rbp)\n";
+    }
 
     return 0;
 }

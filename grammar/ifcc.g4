@@ -20,7 +20,7 @@ variable_assignment
 
 variable_creation
     : INT VAR EQUAL expression
-    | INT VAR
+    | INT VAR (',' VAR)*
     ;
 
 expression
