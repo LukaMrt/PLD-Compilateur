@@ -37,24 +37,31 @@ antlrcpp::Any AsmGeneratorVisitor::visitProg(ifccParser::ProgContext *ctx)
 
 antlrcpp::Any AsmGeneratorVisitor::visitVariable_creation(ifccParser::Variable_creationContext *ctx)
 {
-    auto expr = ctx->expression();
+    return visitChildren(ctx);
+}
 
-    if (expr)
-    {
-        std::string varName = ctx->VARIABLE(0)->getText();
-        this->visit(expr);
-        std::cout << "    movl %eax, " << symbolTable.at(varName).offset << "(%rbp)\n";
-        return 0;
-    }
 
-    for (auto varToken : ctx->VARIABLE())
-    {
-        std::string varName = varToken->getText();
-        std::cout << "    movl $0, " << symbolTable.at(varName).offset << "(%rbp)\n";
-    }
+antlrcpp::Any AsmGeneratorVisitor::visitVariable_creation_with_initialization(ifccParser::Variable_creation_with_initializationContext *ctx)
+{
+    std::string varName = ctx->VARIABLE()->getText();
+    int offset = symbolTable.at(varName).offset;
+
+    this->visit(ctx->expression());
+    std::cout << "    movl %eax, " << offset << "(%rbp)\n";
 
     return 0;
 }
+
+
+antlrcpp::Any AsmGeneratorVisitor::visitVariable_creation_without_initialization(ifccParser::Variable_creation_without_initializationContext *ctx)
+{
+    std::string varName = ctx->VARIABLE()->getText();
+    int offset = symbolTable.at(varName).offset;
+
+    std::cout << "    movl $0, " << offset << "(%rbp)\n";
+
+    return 0;
+}   
 
 antlrcpp::Any AsmGeneratorVisitor::visitVariable_assignment(ifccParser::Variable_assignmentContext *ctx)
 {

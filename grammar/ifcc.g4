@@ -19,8 +19,12 @@ variable_assignment
     ;
 
 variable_creation
-    : INT VARIABLE EQUAL expression
-    | INT VARIABLE (COMMA VARIABLE)*
+    : INT variable_creation_assignement (COMMA variable_creation_assignement)*
+    ;
+
+variable_creation_assignement
+    : VARIABLE EQUAL expression #variable_creation_with_initialization
+    | VARIABLE #variable_creation_without_initialization
     ;
 
 expression

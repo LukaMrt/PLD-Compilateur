@@ -123,4 +123,7 @@ docker-clean: docker-build
 docker-asm: docker-build
 	@$(DOCKER_RUN) make asm FILE=$(FILE)
 
+docker-gui: docker-build
+	@$(DOCKER_RUN) make gui FILE=$(FILE)
+
 .PHONY: docker-build docker docker-test docker-clean docker-asm docker-gcc-asm

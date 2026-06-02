@@ -39,17 +39,34 @@ antlrcpp::Any SymbolTableVisitor::visitVariable_assignment(ifccParser::Variable_
 
 antlrcpp::Any SymbolTableVisitor::visitVariable_creation(ifccParser::Variable_creationContext *ctx)
 {
-    for (auto varToken : ctx->VARIABLE())
+    return visitChildren(ctx);
+}
+
+antlrcpp::Any SymbolTableVisitor::visitVariable_creation_without_initialization(ifccParser::Variable_creation_without_initializationContext *ctx)
+{
+    std::string varName = ctx->VARIABLE()->getText();
+
+    if (isDeclared(varName))
     {
-        std::string varName = varToken->getText();
-        if (isDeclared(varName))
-        {
-            std::cerr << "Error: variable '" << varName << "' already declared." << std::endl;
-            exit(1);
-        }
-        symbolTable[varName] = {nextOffset, false};
-        nextOffset -= 4;
+        std::cerr << "Error: variable '" << varName << "' is already declared." << std::endl;
+        exit(1);
     }
+    symbolTable[varName] = {nextOffset, false};
+    nextOffset -= 4;
+    return 0;
+}
+
+antlrcpp::Any SymbolTableVisitor::visitVariable_creation_with_initialization(ifccParser::Variable_creation_with_initializationContext *ctx)
+{
+    std::string varName = ctx->VARIABLE()->getText();
+
+    if (isDeclared(varName))
+    {
+        std::cerr << "Error: variable '" << varName << "' is already declared." << std::endl;
+        exit(1);
+    }
+    symbolTable[varName] = {nextOffset, false};
+    nextOffset -= 4;
     return 0;
 }
 

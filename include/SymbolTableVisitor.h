@@ -18,6 +18,8 @@ public:
         virtual antlrcpp::Any visitProg(ifccParser::ProgContext *ctx) override;
         virtual antlrcpp::Any visitVariable_assignment(ifccParser::Variable_assignmentContext *ctx) override;
         virtual antlrcpp::Any visitVariable_creation(ifccParser::Variable_creationContext *ctx) override;
+        virtual antlrcpp::Any visitVariable_creation_with_initialization(ifccParser::Variable_creation_with_initializationContext *ctx) override;
+        virtual antlrcpp::Any visitVariable_creation_without_initialization(ifccParser::Variable_creation_without_initializationContext *ctx) override;
         virtual antlrcpp::Any visitVariable_expression(ifccParser::Variable_expressionContext *ctx) override;
 
         std::map<std::string, VariableInfo> getSymbolTable() const { return symbolTable; }
