@@ -15,12 +15,12 @@ statement
 
 variable_assignment
     : variable_creation
-    | VAR EQUAL expression
+    | VARIABLE EQUAL expression
     ;
 
 variable_creation
-    : INT VAR EQUAL expression
-    | INT VAR (COMMA VAR)*
+    : INT VARIABLE EQUAL expression
+    | INT VARIABLE (COMMA VARIABLE)*
     ;
 
 expression
@@ -28,8 +28,8 @@ expression
     | expression op=(TIMES | DIVIDE | MODULO) expression # multiplicative_expression
     | expression op=(PLUS | MINUS) expression            # additive_expression
     | BRACKET_OPEN expression BRACKET_CLOSE              # bracketed_expression
-    | CONST                                              # const_expression
-    | VAR                                                # var_expression
+    | CONSTANT                                           # constant_expression
+    | VARIABLE                                           # variable_expression
     ;
 
 return_statement
@@ -57,7 +57,7 @@ CURLY_BRACE_OPEN  : '{' ;
 CURLY_BRACE_CLOSE : '}' ;
 
 WS        : [ \t\r\n] -> channel(HIDDEN);
-VAR       : [a-zA-Z_][a-zA-Z0-9_]* ;
-CONST     : [0-9]+ ;
 COMMENT   : '/*' .*? '*/' -> skip ;
+CONSTANT  : [0-9]+ ;
+VARIABLE  : [a-zA-Z_][a-zA-Z0-9_]* ;
 DIRECTIVE : '#' .*? '\n' -> skip ;

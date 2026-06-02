@@ -41,13 +41,13 @@ antlrcpp::Any AsmGeneratorVisitor::visitVariable_creation(ifccParser::Variable_c
 
     if (expr)
     {
-        std::string varName = ctx->VAR(0)->getText();
+        std::string varName = ctx->VARIABLE(0)->getText();
         this->visit(expr);
         std::cout << "    movl %eax, " << symbolTable.at(varName).offset << "(%rbp)\n";
         return 0;
     }
 
-    for (auto varToken : ctx->VAR())
+    for (auto varToken : ctx->VARIABLE())
     {
         std::string varName = varToken->getText();
         std::cout << "    movl $0, " << symbolTable.at(varName).offset << "(%rbp)\n";
@@ -63,7 +63,7 @@ antlrcpp::Any AsmGeneratorVisitor::visitVariable_assignment(ifccParser::Variable
         return this->visit(ctx->variable_creation());
     }
 
-    std::string varName = ctx->VAR()->getText();
+    std::string varName = ctx->VARIABLE()->getText();
     int offset = symbolTable.at(varName).offset;
 
     this->visit(ctx->expression());
@@ -139,16 +139,16 @@ antlrcpp::Any AsmGeneratorVisitor::visitBracketed_expression(ifccParser::Bracket
     return this->visit(ctx->expression());
 }
 
-antlrcpp::Any AsmGeneratorVisitor::visitConst_expression(ifccParser::Const_expressionContext *ctx)
+antlrcpp::Any AsmGeneratorVisitor::visitConstant_expression(ifccParser::Constant_expressionContext *ctx)
 {
-    int value = std::stoi(ctx->CONST()->getText());
+    int value = std::stoi(ctx->CONSTANT()->getText());
     std::cout << "    movl $" << value << ", %eax\n";
     return 0;
 }
 
-antlrcpp::Any AsmGeneratorVisitor::visitVar_expression(ifccParser::Var_expressionContext *ctx)
+antlrcpp::Any AsmGeneratorVisitor::visitVariable_expression(ifccParser::Variable_expressionContext *ctx)
 {
-    int offset = symbolTable.at(ctx->VAR()->getText()).offset;
+    int offset = symbolTable.at(ctx->VARIABLE()->getText()).offset;
     std::cout << "    movl " << offset << "(%rbp), %eax\n";
     return 0;
 }

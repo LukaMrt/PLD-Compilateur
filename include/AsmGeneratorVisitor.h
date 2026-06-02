@@ -16,8 +16,8 @@ class AsmGeneratorVisitor : public ifccBaseVisitor {
         virtual antlrcpp::Any visitReturn_statement(ifccParser::Return_statementContext *ctx) override;
         virtual antlrcpp::Any visitVariable_creation(ifccParser::Variable_creationContext *ctx) override;
         virtual antlrcpp::Any visitVariable_assignment(ifccParser::Variable_assignmentContext *ctx) override;
-        virtual antlrcpp::Any visitConst_expression(ifccParser::Const_expressionContext *ctx) override;
-        virtual antlrcpp::Any visitVar_expression(ifccParser::Var_expressionContext *ctx) override;
+        virtual antlrcpp::Any visitConstant_expression(ifccParser::Constant_expressionContext *ctx) override;
+        virtual antlrcpp::Any visitVariable_expression(ifccParser::Variable_expressionContext *ctx) override;
         virtual antlrcpp::Any visitUnary_minus_operation(ifccParser::Unary_minus_operationContext *ctx) override;
         virtual antlrcpp::Any visitAdditive_expression(ifccParser::Additive_expressionContext *ctx) override;
         virtual antlrcpp::Any visitMultiplicative_expression(ifccParser::Multiplicative_expressionContext *ctx) override;

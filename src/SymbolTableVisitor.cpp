@@ -25,7 +25,7 @@ antlrcpp::Any SymbolTableVisitor::visitVariable_assignment(ifccParser::Variable_
         return this->visit(ctx->variable_creation());
     }
 
-    std::string varName = ctx->VAR()->getText();
+    std::string varName = ctx->VARIABLE()->getText();
     if (!isDeclared(varName))
     {
         std::cerr << "Error: variable '" << varName << "' not declared." << std::endl;
@@ -39,7 +39,7 @@ antlrcpp::Any SymbolTableVisitor::visitVariable_assignment(ifccParser::Variable_
 
 antlrcpp::Any SymbolTableVisitor::visitVariable_creation(ifccParser::Variable_creationContext *ctx)
 {
-    for (auto varToken : ctx->VAR())
+    for (auto varToken : ctx->VARIABLE())
     {
         std::string varName = varToken->getText();
         if (isDeclared(varName))
@@ -53,9 +53,9 @@ antlrcpp::Any SymbolTableVisitor::visitVariable_creation(ifccParser::Variable_cr
     return 0;
 }
 
-antlrcpp::Any SymbolTableVisitor::visitVar_expression(ifccParser::Var_expressionContext *ctx)
+antlrcpp::Any SymbolTableVisitor::visitVariable_expression(ifccParser::Variable_expressionContext *ctx)
 {
-    std::string varName = ctx->VAR()->getText();
+    std::string varName = ctx->VARIABLE()->getText();
 
     if (!isDeclared(varName))
     {
