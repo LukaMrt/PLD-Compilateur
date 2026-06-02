@@ -2,10 +2,11 @@
 
 antlrcpp::Any SymbolTableVisitor::visitProg(ifccParser::ProgContext *ctx)
 {
-    for (auto statement : ctx->statement())
-    {
-        this->visit(statement);
-    }
+    this->visit(ctx->bloc());
+    // for (auto statement : ctx->bloc())
+    // {
+    //     this->visit(statement);
+    // }
 
     for (auto &entry : symbolTable)
     {
@@ -18,7 +19,7 @@ antlrcpp::Any SymbolTableVisitor::visitProg(ifccParser::ProgContext *ctx)
     return 0;
 }
 
-antlrcpp::Any SymbolTableVisitor::visitVariable_assignment(ifccParser::Variable_assignmentContext *ctx)
+/*antlrcpp::Any SymbolTableVisitor::visitVariable_assignment(ifccParser::Variable_assignmentContext *ctx)
 {
     if (ctx->variable_creation())
     {
@@ -35,7 +36,7 @@ antlrcpp::Any SymbolTableVisitor::visitVariable_assignment(ifccParser::Variable_
     this->visit(ctx->expression());
 
     return 0;
-}
+}*/
 
 antlrcpp::Any SymbolTableVisitor::visitVariable_creation(ifccParser::Variable_creationContext *ctx)
 {

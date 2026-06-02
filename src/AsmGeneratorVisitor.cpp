@@ -20,10 +20,11 @@ antlrcpp::Any AsmGeneratorVisitor::visitProg(ifccParser::ProgContext *ctx)
     }
     std::cout << "\n";
 
-    for (auto statement : ctx->statement())
+    this->visit(ctx->bloc());
+    /*for (auto statement : ctx->statement())
     {
         this->visit(statement);
-    }
+    }*/
 
     // Epilogue
     std::cout << "\n";
@@ -46,7 +47,7 @@ antlrcpp::Any AsmGeneratorVisitor::visitVariable_creation_with_initialization(if
     std::string varName = ctx->VARIABLE()->getText();
     int offset = symbolTable.at(varName).offset;
 
-    this->visit(ctx->expression());
+    this->visit(ctx->instruction());
     std::cout << "    movl %eax, " << offset << "(%rbp)\n";
 
     return 0;
@@ -63,7 +64,8 @@ antlrcpp::Any AsmGeneratorVisitor::visitVariable_creation_without_initialization
     return 0;
 }   
 
-antlrcpp::Any AsmGeneratorVisitor::visitVariable_assignment(ifccParser::Variable_assignmentContext *ctx)
+// DELETED
+/*antlrcpp::Any AsmGeneratorVisitor::visitVariable_assignment(ifccParser::Variable_assignmentContext *ctx)
 {
     if (ctx->variable_creation())
     {
@@ -77,7 +79,7 @@ antlrcpp::Any AsmGeneratorVisitor::visitVariable_assignment(ifccParser::Variable
     std::cout << "    movl %eax, " << offset << "(%rbp)\n";
 
     return 0;
-}
+}*/
 
 antlrcpp::Any AsmGeneratorVisitor::visitReturn_statement(ifccParser::Return_statementContext *ctx)
 {
@@ -85,10 +87,22 @@ antlrcpp::Any AsmGeneratorVisitor::visitReturn_statement(ifccParser::Return_stat
     return 0;
 }
 
-antlrcpp::Any AsmGeneratorVisitor::visitUnary_minus_operation(ifccParser::Unary_minus_operationContext *ctx)
+antlrcpp::Any AsmGeneratorVisitor::visitUnary_operation(ifccParser::Unary_operationContext *ctx)
 {
     this->visit(ctx->expression());
-    std::cout << "    neg %eax\n";
+    
+    if (ctx->op->getType() == ifccParser::MINUS)
+    {
+        std::cout << "    neg %eax\n";                    // unary minus: negate
+    }
+    else if (ctx->op->getType() == ifccParser::NOT)
+    {
+        // IA generated
+        std::cout << "    test %eax, %eax\n";             // set ZF if %eax == 0
+        std::cout << "    sete %al\n";                     // set %al to 1 if ZF is set, 0 otherwise
+        std::cout << "    movzbl %al, %eax\n";            // zero-extend %al to %eax
+    }
+    
     return 0;
 }
 
@@ -141,9 +155,10 @@ antlrcpp::Any AsmGeneratorVisitor::visitMultiplicative_expression(ifccParser::Mu
     return 0;
 }
 
+// TODO vraiment besoin de surcharger ? C'est le comportement de base
 antlrcpp::Any AsmGeneratorVisitor::visitBracketed_expression(ifccParser::Bracketed_expressionContext *ctx)
 {
-    return this->visit(ctx->expression());
+    return this->visit(ctx->instruction());
 }
 
 antlrcpp::Any AsmGeneratorVisitor::visitConstant_expression(ifccParser::Constant_expressionContext *ctx)
