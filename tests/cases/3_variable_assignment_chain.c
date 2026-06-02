@@ -4,5 +4,6 @@ int main() {
     int z;
     int a = y;
     x = a;
-    return x;
+    int b = 1, c, d = 2;
+    return x + y + z + a + b + c + d;
 }
