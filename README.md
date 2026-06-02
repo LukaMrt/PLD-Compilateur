@@ -11,6 +11,19 @@ galères de config entre machines) ou **natif** (installation locale d'ANTLR).
 
 ---
 
+## Présentation de l'équipe 
+- **Luka Maret**
+- **Valentin Dury**
+- **Sarah Ripoche**
+- **Adina Valkova**
+- **Louis Zyzelewicz**
+- **Clément Dubois**
+
+Nous nous répartissons le travail via des points hebdo et certains travaillent en parallèle et/ou en binôme sur différentes parties de projet.
+
+Pour assurer la compatibilité entre nos machines, nous avons choisi d'utiliser Docker mis en place par Luka, à l'aide de Claude, pour éviter de perdre du temps sur la configuration et le socle technique.
+
+
 ## Mode Docker (recommandé)
 
 Prérequis : seulement [Docker](https://docs.docker.com/get-docker/).
