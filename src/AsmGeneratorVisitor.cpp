@@ -12,11 +12,11 @@ antlrcpp::Any AsmGeneratorVisitor::visitProg(ifccParser::ProgContext *ctx)
 
     // Reserve stack space for local variables (aligned on 16 bytes)
     // so that push/pop used as scratch storage don't clobber them.
-    int stackSize = static_cast<int>(symbolTable.size()) * 4;
-    stackSize = (stackSize + 15) & ~15;
-    if (stackSize > 0)
+    int stackSize = symbolTable.size() * 4;
+    int alignedStackSize = (stackSize + 15) / 16 * 16; // round up to next multiple of 16 (ABI requirement)
+    if (alignedStackSize > 0)
     {
-        std::cout << "    subq $" << stackSize << ", %rsp   # allocate room for local variables\n";
+        std::cout << "    subq $" << alignedStackSize << ", %rsp   # allocate room for local variables\n";
     }
     std::cout << "\n";
 
