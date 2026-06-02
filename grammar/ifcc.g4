@@ -20,7 +20,7 @@ variable_assignment
 
 variable_creation
     : INT VAR EQUAL expression
-    | INT VAR (',' VAR)*
+    | INT VAR (COMMA VAR)*
     ;
 
 expression
@@ -47,6 +47,7 @@ PLUS              : '+' ;
 TIMES             : '*' ;
 MINUS             : '-' ;
 EQUAL             : '=' ;
+COMMA             : ',' ;
 DIVIDE            : '/' ;
 MODULO            : '%' ;
 SEMI_COLON        : ';' ;
