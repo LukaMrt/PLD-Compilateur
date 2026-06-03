@@ -43,13 +43,18 @@ private:
                 nextOffset -= 4;
         }
 
-        void useVariable(const std::string &varName)
+        void checkDeclared(const std::string &varName)
         {
                 if (!isDeclared(varName))
                 {
                         std::cerr << "Error: variable '" << varName << "' is not declared." << std::endl;
                         exit(1);
                 }
+        }
+
+        void useVariable(const std::string &varName)
+        {
+                checkDeclared(varName);
                 symbolTable[varName].used = true;
         }
 };
