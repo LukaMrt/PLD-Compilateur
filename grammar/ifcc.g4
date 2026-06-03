@@ -63,11 +63,13 @@ TYPE
     | 'void'
     ;
 
+// Keywords
 IF : 'if' ;
 ELSE : 'else' ;
 WHILE : 'while' ;
 RETURN : 'return' ;
 
+// Arithmetic and logical operators
 NOT               : '!' ;
 PLUS              : '+' ;
 TIMES             : '*' ;
@@ -76,18 +78,22 @@ EQUAL             : '=' ;
 COMMA             : ',' ;
 DIVIDE            : '/' ;
 MODULO            : '%' ;
-LESSER            : '<' ;
-GREATER           : '>' ;
-NOT_EQUAL         : '!=' ;
 SEMI_COLON        : ';' ;
 BITWISE_OR        : '|' ;
 BITWISE_AND       : '&' ;
 BITWISE_XOR       : '^' ;
-BRACKET_OPEN      : '(' ;
+
+// Comparison operators
+LESSER            : '<' ;
+GREATER           : '>' ;
+NOT_EQUAL         : '!=' ;
 COMPARE_EQUAL     : '==' ;
-BRACKET_CLOSE     : ')' ;
 LESSER_OR_EQUAL   : '<=' ;
 GREATER_OR_EQUAL  : '>=' ;
+
+// Delimiters
+BRACKET_OPEN      : '(' ;
+BRACKET_CLOSE     : ')' ;
 CURLY_BRACE_OPEN  : '{' ;
 CURLY_BRACE_CLOSE : '}' ;
 
