@@ -41,10 +41,9 @@ antlrcpp::Any SymbolTableVisitor::visitVariable_definition_without_instruction(i
 
 antlrcpp::Any SymbolTableVisitor::visitInstruction(ifccParser::InstructionContext *ctx)
 {
-    if (ctx->IDENTIFIER() != nullptr)
+    for (auto &id : ctx->IDENTIFIER())
     {
-        std::string varName = ctx->IDENTIFIER()->getText();
-        this->useVariable(varName);
+        this->checkDeclared(id->getText());
     }
     return visitChildren(ctx);
 }

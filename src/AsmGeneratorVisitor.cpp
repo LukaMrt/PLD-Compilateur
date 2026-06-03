@@ -65,9 +65,9 @@ antlrcpp::Any AsmGeneratorVisitor::visitInstruction(ifccParser::InstructionConte
 {
     this->visit(ctx->expression());
 
-    if (ctx->IDENTIFIER() != nullptr)
+    for (auto &child : ctx->IDENTIFIER())
     {
-        std::string varName = ctx->IDENTIFIER()->getText();
+        std::string varName = child->getText();
         int offset = symbolTable.at(varName).offset;
         std::cout << "    movl %eax, " << offset << "(%rbp)\n";
     }
