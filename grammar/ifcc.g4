@@ -20,6 +20,8 @@ statement
     : instruction SEMI_COLON
     | variable_declaration SEMI_COLON
     | return_statement SEMI_COLON
+    | IF BRACKET_OPEN expression BRACKET_CLOSE (statement | block | SEMI_COLON) (ELSE (statement | block | SEMI_COLON))?
+    | WHILE BRACKET_OPEN expression BRACKET_CLOSE (statement | block | SEMI_COLON)
     ;
 
 variable_declaration
@@ -32,19 +34,21 @@ variable_definition
     ;
 
 instruction
-    : (IDENTIFIER EQUAL)? expression
+    : (IDENTIFIER EQUAL)* expression
     ;
 
 expression
-    : op=(MINUS | NOT) expression                         # unary_operation
-    | expression op=(TIMES | DIVIDE | MODULO) expression  # multiplicative_expression
-    | expression op=(PLUS | MINUS) expression             # additive_expression
-    | expression op=(LE | GE | LT | GT) expression        # comp_expression
-    | expression op=(EQ | NE) expression                  # diff_expression
-    | BRACKET_OPEN instruction BRACKET_CLOSE              # bracketed_expression
-    | CONSTANT                                            # constant_expression
-    | SIMPLE_CHAR                                         # simple_char
-    | IDENTIFIER                                          # variable_expression
+    : op=(MINUS | NOT) expression                                             # unary_operation
+    | expression op=(TIMES | DIVIDE | MODULO) expression                      # multiplicative_expression
+    | expression op=(PLUS | MINUS) expression                                 # additive_expression
+    | expression op=(LE | GE | LT | GT) expression                            # comp_expression
+    | expression op=(EQ | NE) expression                                      # diff_expression
+    | expression op=(AND | XOR | OR) expression                               # bitwise_expression
+    | BRACKET_OPEN instruction BRACKET_CLOSE                                  # bracketed_expression
+    | CONSTANT                                                                # constant_expression
+    | SIMPLE_CHAR                                                             # simple_char
+    | IDENTIFIER                                                              # variable_expression
+    | IDENTIFIER BRACKET_OPEN (expression (COMMA expression)*)? BRACKET_CLOSE # function_call
     ;
 
 return_statement
@@ -57,6 +61,9 @@ TYPE
     | 'double'
     | 'void'
     ;
+IF : 'if' ;
+ELSE : 'else' ;
+WHILE : 'while' ;
 
 LE                : '<=' ;
 GE                : '>=' ;
@@ -64,6 +71,9 @@ LT                : '<' ;
 GT                : '>' ;
 EQ                : '==' ;
 NE                : '!=' ;
+OR                : '|' ;
+AND               : '&' ;
+XOR               : '^' ;
 NOT               : '!' ;
 PLUS              : '+' ;
 TIMES             : '*' ;

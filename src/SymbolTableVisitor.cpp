@@ -41,11 +41,13 @@ antlrcpp::Any SymbolTableVisitor::visitVariable_definition_without_instruction(i
 
 antlrcpp::Any SymbolTableVisitor::visitInstruction(ifccParser::InstructionContext *ctx)
 {
-    if (ctx->IDENTIFIER() != nullptr)
+    // Le code est pas valide
+    // en plus, je pense qu'il ne faut pas marquer en utilisé, elle est juste définie.
+    /*if (ctx->IDENTIFIER() != nullptr)
     {
         std::string varName = ctx->IDENTIFIER()->getText();
         this->useVariable(varName);
-    }
+    }*/
     return visitChildren(ctx);
 }
 
