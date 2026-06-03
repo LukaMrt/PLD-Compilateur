@@ -11,6 +11,15 @@ void Block::addInstruction(Instruction *instruction)
     instructions.push_back(instruction);
 }
 
+void Block::debug(std::ostream &output) const
+{
+    output << "[Block: " << label << "]\n";
+    for (Instruction *instruction : instructions)
+    {
+        instruction->debug(output);
+    }
+}
+
 void Block::generateASM(Backend &backend, std::ostream &output)
 {
     backend.emitBlockLabel(this, output);

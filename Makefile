@@ -92,7 +92,7 @@ gui:
 # Usage: `make asm FILE=path/to/your/file.c`
 asm: ifcc
 	@mkdir -p build
-	@./build/ifcc $(FILE) > build/$(notdir $(basename $(FILE))).s
+	@./build/ifcc --debug-ir $(FILE) > build/$(notdir $(basename $(FILE))).s
 	@echo ">>> Assembly written to build/$(notdir $(basename $(FILE))).s"
 	@cat build/$(notdir $(basename $(FILE))).s
 

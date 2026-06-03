@@ -11,6 +11,7 @@ public:
         : Instruction(block, type), destination(destination), left(left), right(right) {}
 
     void generate(Backend &backend, std::ostream &output) override;
+    void debug(std::ostream &output) const override { output << "  Add           " << destination << " = " << left << " + " << right << "\n"; }
 
     std::string getDestination() const { return destination; }
     std::string getLeft() const { return left; }

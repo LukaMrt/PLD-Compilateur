@@ -44,6 +44,22 @@ void ControlFlowGraph::addBlock(Block *block)
     currentBlock = block;
 }
 
+void ControlFlowGraph::debug(std::ostream &output) const
+{
+    output << "=== CFG: " << label << " ===\n";
+    output << "Variables:\n";
+    for (const auto &[name, var] : variableMap)
+    {
+        output << "  " << name << "  offset=" << var.offset << "\n";
+    }
+    output << "Blocks:\n";
+    for (Block *block : blocks)
+    {
+        block->debug(output);
+    }
+    output << "\n";
+}
+
 void ControlFlowGraph::generateASM(Backend &backend, std::ostream &output)
 {
     backend.emitPrologue(this, output);

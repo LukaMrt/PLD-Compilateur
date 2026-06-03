@@ -16,20 +16,32 @@ using namespace antlr4;
 
 int main(int argn, const char **argv)
 {
-    std::stringstream in;
-    if (argn == 2)
+    bool debugIR = false;
+    std::string filename;
+
+    for (int i = 1; i < argn; ++i)
     {
-        std::ifstream lecture(argv[1]);
+        std::string arg(argv[i]);
+        if (arg == "--debug-ir")
+            debugIR = true;
+        else
+            filename = arg;
+    }
+
+    std::stringstream in;
+    if (!filename.empty())
+    {
+        std::ifstream lecture(filename);
         if (!lecture.good())
         {
-            std::cerr << "error: cannot read file: " << argv[1] << std::endl;
+            std::cerr << "error: cannot read file: " << filename << std::endl;
             exit(1);
         }
         in << lecture.rdbuf();
     }
     else
     {
-        std::cerr << "usage: ifcc path/to/file.c" << std::endl;
+        std::cerr << "usage: ifcc [--debug-ir] path/to/file.c" << std::endl;
         exit(1);
     }
 
@@ -59,6 +71,9 @@ int main(int argn, const char **argv)
 
     IRGeneratorVisitor irVisitor(symbolTableVisitor.getSymbolTable());
     irVisitor.visit(tree);
+
+    if (debugIR)
+        irVisitor.getCFG()->debug(std::cerr);
 
     X86Backend backend;
     irVisitor.getCFG()->generateASM(backend, std::cout);

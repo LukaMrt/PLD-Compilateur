@@ -16,6 +16,7 @@ public:
 	void generateASM(Backend &backend, std::ostream &output);
 
 	void addInstruction(Instruction *instruction);
+	void debug(std::ostream &output) const;
 
 	std::string getLabel() { return label; }
 	Block *getTrueCaseBlock() { return true_case_block; }

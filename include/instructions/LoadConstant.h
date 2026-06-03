@@ -11,6 +11,7 @@ public:
         : Instruction(block, type), destination(destination), value(value) {}
 
     void generate(Backend &backend, std::ostream &output) override;
+    void debug(std::ostream &output) const override { output << "  LoadConstant  " << destination << " = " << value << "\n"; }
 
     std::string getDestination() const { return destination; }
     int getValue() const { return value; }

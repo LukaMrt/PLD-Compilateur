@@ -16,6 +16,7 @@ public:
 	ControlFlowGraph(std::string label);
 
 	void generateASM(Backend &backend, std::ostream &output);
+	void debug(std::ostream &output) const;
 
 	// variable map management
 	void addVariable(std::string name, Type type);
