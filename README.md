@@ -3,7 +3,7 @@
 Compilateur d'un sous-ensemble de C, écrit en C++ avec ANTLR4. Le pipeline :
 
 ```
-source .c  →  lexer/parser ANTLR  →  arbre  →  SymbolTableVisitor  →  AsmGeneratorVisitor  →  assembleur (stdout)
+source .c  →  lexer/parser ANTLR  →  arbre  →  SymbolTableVisitor  →  IRGeneratorVisitor  →  X86Backend  →  assembleur (stdout)
 ```
 
 Deux façons de travailler : **Docker** (zéro install, recommandé pour éviter les

@@ -25,7 +25,6 @@ OBJECTS=build/ifccBaseVisitor.o \
 	build/ifccVisitor.o \
 	build/ifccParser.o \
 	build/main.o \
-	build/AsmGeneratorVisitor.o \
 	build/SymbolTableVisitor.o \
 	build/IRGeneratorVisitor.o \
 	build/Block.o \
