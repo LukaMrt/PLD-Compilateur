@@ -1,3 +1,5 @@
+#pragma once
+
 #include "antlr4-runtime.h"
 #include "generated/ifccBaseVisitor.h"
 
@@ -9,7 +11,6 @@ class SymbolTableVisitor : public ifccBaseVisitor
 public:
         struct VariableInfo
         {
-                int offset;
                 bool used;
         };
 
@@ -23,8 +24,6 @@ public:
 
 private:
         std::map<std::string, VariableInfo> symbolTable;
-        int nextOffset = -4;
-
         bool isDeclared(const std::string &varName)
         {
                 return symbolTable.find(varName) != symbolTable.end();
@@ -37,8 +36,7 @@ private:
                         std::cerr << "Error: variable '" << varName << "' is already declared." << std::endl;
                         exit(1);
                 }
-                symbolTable[varName] = {nextOffset, false};
-                nextOffset -= 4;
+                symbolTable[varName] = {false};
         }
 
         void checkDeclared(const std::string &varName)

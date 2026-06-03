@@ -1,0 +1,106 @@
+#include "backend/X86Backend.h"
+#include "Block.h"
+#include "ControlFlowGraph.h"
+#include "instructions/Add.h"
+#include "instructions/Subtract.h"
+#include "instructions/Multiply.h"
+#include "instructions/Divide.h"
+#include "instructions/Modulo.h"
+#include "instructions/Copy.h"
+#include "instructions/LoadConstant.h"
+#include "instructions/Negate.h"
+
+void X86Backend::emitPrologue(ControlFlowGraph *cfg, std::ostream &output)
+{
+    output << ".globl " << cfg->getLabel() << "\n";
+    output << cfg->getLabel() << ":\n";
+    output << "    pushq %rbp\n";
+    output << "    movq %rsp, %rbp\n";
+}
+
+void X86Backend::emitEpilogue(ControlFlowGraph *cfg, std::ostream &output)
+{
+    output << "    movl " << varToLocation("$return", cfg) << ", %eax\n";
+    output << "    movq %rbp, %rsp\n";
+    output << "    popq %rbp\n";
+    output << "    ret\n";
+}
+
+void X86Backend::emitBlockLabel(Block *block, std::ostream &output)
+{
+    output << block->getLabel() << ":\n";
+}
+
+void X86Backend::emitJump(Block *block, std::ostream &output)
+{
+    output << "    jmp " << block->getLabel() << "\n";
+}
+
+std::string X86Backend::varToLocation(std::string name, ControlFlowGraph *cfg)
+{
+    return std::to_string(-cfg->getVar(name).offset) + "(%rbp)";
+}
+
+void X86Backend::emit(LoadConstant *instr, std::ostream &output)
+{
+    ControlFlowGraph *cfg = instr->getBlock()->getControlFlowGraph();
+    output << "    movl $" << instr->getValue()
+           << ", " << varToLocation(instr->getDestination(), cfg) << "\n";
+}
+
+void X86Backend::emit(Copy *instr, std::ostream &output)
+{
+    ControlFlowGraph *cfg = instr->getBlock()->getControlFlowGraph();
+    output << "    movl " << varToLocation(instr->getSrc(), cfg) << ", %eax\n";
+    output << "    movl %eax, " << varToLocation(instr->getDestination(), cfg) << "\n";
+}
+
+void X86Backend::emit(Negate *instr, std::ostream &output)
+{
+    ControlFlowGraph *cfg = instr->getBlock()->getControlFlowGraph();
+    output << "    movl " << varToLocation(instr->getSrc(), cfg) << ", %eax\n";
+    output << "    negl %eax\n";
+    output << "    movl %eax, " << varToLocation(instr->getDestination(), cfg) << "\n";
+}
+
+void X86Backend::emit(Add *instr, std::ostream &output)
+{
+    ControlFlowGraph *cfg = instr->getBlock()->getControlFlowGraph();
+    output << "    movl " << varToLocation(instr->getLeft(), cfg) << ", %eax\n";
+    output << "    addl " << varToLocation(instr->getRight(), cfg) << ", %eax\n";
+    output << "    movl %eax, " << varToLocation(instr->getDestination(), cfg) << "\n";
+}
+
+void X86Backend::emit(Subtract *instr, std::ostream &output)
+{
+    ControlFlowGraph *cfg = instr->getBlock()->getControlFlowGraph();
+    output << "    movl " << varToLocation(instr->getLeft(), cfg) << ", %eax\n";
+    output << "    subl " << varToLocation(instr->getRight(), cfg) << ", %eax\n";
+    output << "    movl %eax, " << varToLocation(instr->getDestination(), cfg) << "\n";
+}
+
+void X86Backend::emit(Multiply *instr, std::ostream &output)
+{
+    ControlFlowGraph *cfg = instr->getBlock()->getControlFlowGraph();
+    output << "    movl " << varToLocation(instr->getLeft(), cfg) << ", %eax\n";
+    output << "    imull " << varToLocation(instr->getRight(), cfg) << ", %eax\n";
+    output << "    movl %eax, " << varToLocation(instr->getDestination(), cfg) << "\n";
+}
+
+void X86Backend::emit(Divide *instr, std::ostream &output)
+{
+    ControlFlowGraph *cfg = instr->getBlock()->getControlFlowGraph();
+    output << "    movl " << varToLocation(instr->getLeft(), cfg) << ", %eax\n";
+    output << "    cdq\n";
+    output << "    idivl " << varToLocation(instr->getRight(), cfg) << "\n";
+    output << "    movl %eax, " << varToLocation(instr->getDestination(), cfg) << "\n";
+}
+
+void X86Backend::emit(Modulo *instr, std::ostream &output)
+{
+    ControlFlowGraph *cfg = instr->getBlock()->getControlFlowGraph();
+    output << "    movl " << varToLocation(instr->getLeft(), cfg) << ", %eax\n";
+    output << "    cdq\n";
+    output << "    idivl " << varToLocation(instr->getRight(), cfg) << "\n";
+    output << "    movl %edx, " << varToLocation(instr->getDestination(), cfg) << "\n";
+}

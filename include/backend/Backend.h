@@ -1,0 +1,37 @@
+#pragma once
+
+#include <iostream>
+#include <string>
+
+class Block;
+class ControlFlowGraph;
+class Add;
+class Subtract;
+class Multiply;
+class Divide;
+class Modulo;
+class Copy;
+class LoadConstant;
+class Negate;
+
+class Backend
+{
+public:
+    virtual ~Backend() = default;
+
+    virtual void emitBlockLabel(Block *block, std::ostream &output) = 0;
+    virtual void emitJump(Block *block, std::ostream &output) = 0;
+    virtual void emitPrologue(ControlFlowGraph *cfg, std::ostream &output) = 0;
+    virtual void emitEpilogue(ControlFlowGraph *cfg, std::ostream &output) = 0;
+
+    virtual std::string varToLocation(std::string name, ControlFlowGraph *cfg) = 0;
+
+    virtual void emit(Add *instr, std::ostream &output) = 0;
+    virtual void emit(Subtract *instr, std::ostream &output) = 0;
+    virtual void emit(Multiply *instr, std::ostream &output) = 0;
+    virtual void emit(Divide *instr, std::ostream &output) = 0;
+    virtual void emit(Modulo *instr, std::ostream &output) = 0;
+    virtual void emit(Copy *instr, std::ostream &output) = 0;
+    virtual void emit(LoadConstant *instr, std::ostream &output) = 0;
+    virtual void emit(Negate *instr, std::ostream &output) = 0;
+};

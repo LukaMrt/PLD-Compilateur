@@ -8,27 +8,28 @@
 #include "generated/ifccParser.h"
 #include "generated/ifccBaseVisitor.h"
 
-#include "AsmGeneratorVisitor.h"
+#include "SymbolTableVisitor.h"
+#include "IRGeneratorVisitor.h"
+#include "backend/X86Backend.h"
 
 using namespace antlr4;
-using namespace std;
 
 int main(int argn, const char **argv)
 {
-    stringstream in;
+    std::stringstream in;
     if (argn == 2)
     {
-        ifstream lecture(argv[1]);
+        std::ifstream lecture(argv[1]);
         if (!lecture.good())
         {
-            cerr << "error: cannot read file: " << argv[1] << endl;
+            std::cerr << "error: cannot read file: " << argv[1] << std::endl;
             exit(1);
         }
         in << lecture.rdbuf();
     }
     else
     {
-        cerr << "usage: ifcc path/to/file.c" << endl;
+        std::cerr << "usage: ifcc path/to/file.c" << std::endl;
         exit(1);
     }
 
@@ -36,12 +37,11 @@ int main(int argn, const char **argv)
 
     ifccLexer lexer(&input);
     CommonTokenStream tokens(&lexer);
-
     tokens.fill();
 
     if (lexer.getNumberOfSyntaxErrors() != 0)
     {
-        cerr << "error: syntax error during lexing" << endl;
+        std::cerr << "error: syntax error during lexing" << std::endl;
         exit(1);
     }
 
@@ -50,14 +50,18 @@ int main(int argn, const char **argv)
 
     if (parser.getNumberOfSyntaxErrors() != 0)
     {
-        cerr << "error: syntax error during parsing" << endl;
+        std::cerr << "error: syntax error during parsing" << std::endl;
         exit(1);
     }
 
     SymbolTableVisitor symbolTableVisitor;
     symbolTableVisitor.visit(tree);
-    AsmGeneratorVisitor v = AsmGeneratorVisitor(symbolTableVisitor.getSymbolTable());
-    v.visit(tree);
+
+    IRGeneratorVisitor irVisitor(symbolTableVisitor.getSymbolTable());
+    irVisitor.visit(tree);
+
+    X86Backend backend;
+    irVisitor.getCFG()->generateASM(backend, std::cout);
 
     return 0;
 }

@@ -6,7 +6,7 @@
 #include <map>
 
 #include "Block.h"
-#include "Backend.h"
+#include "backend/Backend.h"
 #include "struct/Type.h"
 #include "struct/Variable.h"
 
@@ -28,9 +28,12 @@ public:
 	void setCurrentBlock(Block *block) { currentBlock = block; }
 	Block *getCurrentBlock() { return currentBlock; }
 	std::string getLabel() { return label; }
+	int getCurrentOffset() { return currentOffset; }
 
 protected:
+	std::string label;
 	Block *currentBlock;
 	std::map<std::string, Variable> variableMap;
 	std::vector<Block *> blocks;
+	int currentOffset = 0;
 };

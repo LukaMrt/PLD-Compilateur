@@ -5,5 +5,5 @@
 struct Variable
 {
 	Type type;
-	int index;
+	int offset;
 };

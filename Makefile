@@ -26,18 +26,30 @@ OBJECTS=build/ifccBaseVisitor.o \
 	build/ifccParser.o \
 	build/main.o \
 	build/AsmGeneratorVisitor.o \
-	build/SymbolTableVisitor.o
+	build/SymbolTableVisitor.o \
+	build/IRGeneratorVisitor.o \
+	build/Block.o \
+	build/ControlFlowGraph.o \
+	build/backend/X86Backend.o \
+	build/instructions/Add.o \
+	build/instructions/Subtract.o \
+	build/instructions/Multiply.o \
+	build/instructions/Divide.o \
+	build/instructions/Modulo.o \
+	build/instructions/Copy.o \
+	build/instructions/LoadConstant.o \
+	build/instructions/Negate.o
 
 ifcc: $(OBJECTS)
 	@mkdir -p build
 	@echo ">>> Linking build/ifcc..."
-	@$(CC) $(LDFLAGS) build/*.o $(ANTLRLIB) -o build/ifcc
+	@$(CC) $(LDFLAGS) $(OBJECTS) $(ANTLRLIB) -o build/ifcc
 	@echo ">>> Build complete: build/ifcc"
 
 ##########################################
 # compile our hand-written C++ code: main(), AsmGeneratorVisitor, etc.
 build/%.o: src/%.cpp generated/ifccParser.cpp
-	@mkdir -p build
+	@mkdir -p $(dir $@)
 	@echo "  Compiling $<..."
 	@$(CC) $(CCFLAGS) -MMD -o $@ $<
 

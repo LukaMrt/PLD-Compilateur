@@ -1,41 +1,55 @@
-#include <vector>
-#include <string>
-#include <iostream>
-#include <map>
-#include "Backend.h"
-#include "struct/Type.h"
 #include "ControlFlowGraph.h"
 
-using namespace std;
-
-string ControlFlowGraph::addTempVariable(Type type)
+ControlFlowGraph::ControlFlowGraph(std::string label)
+    : label(label), currentBlock(nullptr), currentOffset(0)
 {
-    string tempVarName = "temp" + to_string(variableMap.size());
+}
+
+void ControlFlowGraph::addVariable(std::string name, Type type)
+{
+    if (variableMap.find(name) != variableMap.end())
+    {
+        std::cerr << "Error: variable '" << name << "' already exists in the current scope." << std::endl;
+        exit(1);
+    }
+    currentOffset += typeSize(type);
+    variableMap[name] = {type, currentOffset};
+}
+
+std::string ControlFlowGraph::addTempVariable(Type type)
+{
+    std::string tempVarName = "temp" + std::to_string(variableMap.size());
     addVariable(tempVarName, type);
     return tempVarName;
 }
 
-void ControlFlowGraph::addVariable(string name, Type type)
+Variable ControlFlowGraph::getVar(std::string name)
 {
-    if (variableMap.find(name) != variableMap.end())
+    if (variableMap.find(name) == variableMap.end())
     {
-        cerr << "Error: variable '" << name << "' already exists in the current scope." << endl;
+        std::cerr << "Error: variable '" << name << "' not found." << std::endl;
         exit(1);
     }
-    variableMap[name] = {type, (int)variableMap.size()};
+    return variableMap[name];
 }
 
-void ControlFlowGraph::addBlock(BasicBlock *block)
+std::string ControlFlowGraph::getOffset(std::string name)
+{
+    return std::to_string(getVar(name).offset);
+}
+
+void ControlFlowGraph::addBlock(Block *block)
 {
     blocks.push_back(block);
     currentBlock = block;
 }
 
-void ControlFlowGraph::generateASM(Backend &backend, ostream &output)
+void ControlFlowGraph::generateASM(Backend &backend, std::ostream &output)
 {
-    for (BasicBlock *block : blocks)
+    backend.emitPrologue(this, output);
+    for (Block *block : blocks)
     {
         block->generateASM(backend, output);
     }
+    backend.emitEpilogue(this, output);
 }
-
