@@ -1,9 +1,10 @@
 #include "AsmGeneratorVisitor.h"
 
-antlrcpp::Any AsmGeneratorVisitor::visitProg(ifccParser::ProgContext *ctx)
+antlrcpp::Any AsmGeneratorVisitor::visitFunction(ifccParser::FunctionContext *ctx)
 {
-    std::cout << ".globl main\n";
-    std::cout << " main: \n";
+    std::string funcName = ctx->IDENTIFIER()->getText();
+    std::cout << ".globl " << funcName << "\n";
+    std::cout << " " << funcName << ": \n";
 
     // Prologue
     std::cout << "    # Prologue\n";
@@ -20,10 +21,9 @@ antlrcpp::Any AsmGeneratorVisitor::visitProg(ifccParser::ProgContext *ctx)
     }
     std::cout << "\n";
 
-    for (auto statement : ctx->statement())
-    {
-        this->visit(statement);
-    }
+    std::cout << "    movl $0, %eax\n"; // implicit return 0 if no return statement
+
+    this->visit(ctx->block());
 
     // Epilogue
     std::cout << "\n";
@@ -35,46 +35,42 @@ antlrcpp::Any AsmGeneratorVisitor::visitProg(ifccParser::ProgContext *ctx)
     return 0;
 }
 
-antlrcpp::Any AsmGeneratorVisitor::visitVariable_creation(ifccParser::Variable_creationContext *ctx)
+antlrcpp::Any AsmGeneratorVisitor::visitVariable_declaration(ifccParser::Variable_declarationContext *ctx)
 {
     return visitChildren(ctx);
 }
 
-
-antlrcpp::Any AsmGeneratorVisitor::visitVariable_creation_with_initialization(ifccParser::Variable_creation_with_initializationContext *ctx)
+antlrcpp::Any AsmGeneratorVisitor::visitVariable_definition_with_instruction(ifccParser::Variable_definition_with_instructionContext *ctx)
 {
-    std::string varName = ctx->VARIABLE()->getText();
+    std::string varName = ctx->IDENTIFIER()->getText();
     int offset = symbolTable.at(varName).offset;
 
-    this->visit(ctx->expression());
+    this->visit(ctx->instruction());
     std::cout << "    movl %eax, " << offset << "(%rbp)\n";
 
     return 0;
 }
 
-
-antlrcpp::Any AsmGeneratorVisitor::visitVariable_creation_without_initialization(ifccParser::Variable_creation_without_initializationContext *ctx)
+antlrcpp::Any AsmGeneratorVisitor::visitVariable_definition_without_instruction(ifccParser::Variable_definition_without_instructionContext *ctx)
 {
-    std::string varName = ctx->VARIABLE()->getText();
+    std::string varName = ctx->IDENTIFIER()->getText();
     int offset = symbolTable.at(varName).offset;
 
     std::cout << "    movl $0, " << offset << "(%rbp)\n";
 
     return 0;
-}   
+}
 
-antlrcpp::Any AsmGeneratorVisitor::visitVariable_assignment(ifccParser::Variable_assignmentContext *ctx)
+antlrcpp::Any AsmGeneratorVisitor::visitInstruction(ifccParser::InstructionContext *ctx)
 {
-    if (ctx->variable_creation())
-    {
-        return this->visit(ctx->variable_creation());
-    }
-
-    std::string varName = ctx->VARIABLE()->getText();
-    int offset = symbolTable.at(varName).offset;
-
     this->visit(ctx->expression());
-    std::cout << "    movl %eax, " << offset << "(%rbp)\n";
+
+    if (ctx->IDENTIFIER() != nullptr)
+    {
+        std::string varName = ctx->IDENTIFIER()->getText();
+        int offset = symbolTable.at(varName).offset;
+        std::cout << "    movl %eax, " << offset << "(%rbp)\n";
+    }
 
     return 0;
 }
@@ -85,10 +81,22 @@ antlrcpp::Any AsmGeneratorVisitor::visitReturn_statement(ifccParser::Return_stat
     return 0;
 }
 
-antlrcpp::Any AsmGeneratorVisitor::visitUnary_minus_operation(ifccParser::Unary_minus_operationContext *ctx)
+antlrcpp::Any AsmGeneratorVisitor::visitUnary_operation(ifccParser::Unary_operationContext *ctx)
 {
     this->visit(ctx->expression());
-    std::cout << "    neg %eax\n";
+
+    if (ctx->op->getType() == ifccParser::MINUS)
+    {
+        std::cout << "    neg %eax\n"; // unary minus: negate
+    }
+    else if (ctx->op->getType() == ifccParser::NOT)
+    {
+        // IA generated
+        std::cout << "    test %eax, %eax\n";  // set ZF if %eax == 0
+        std::cout << "    sete %al\n";         // set %al to 1 if ZF is set, 0 otherwise
+        std::cout << "    movzbl %al, %eax\n"; // zero-extend %al to %eax
+    }
+
     return 0;
 }
 
@@ -103,7 +111,7 @@ antlrcpp::Any AsmGeneratorVisitor::visitAdditive_expression(ifccParser::Additive
 
     if (ctx->op->getType() == ifccParser::PLUS)
     {
-        std::cout << "    add %ebx, %eax\n";        // %eax = left + right
+        std::cout << "    add %ebx, %eax\n"; // %eax = left + right
     }
     else
     {
@@ -124,26 +132,21 @@ antlrcpp::Any AsmGeneratorVisitor::visitMultiplicative_expression(ifccParser::Mu
 
     if (ctx->op->getType() == ifccParser::TIMES)
     {
-        std::cout << "    imul %ebx, %eax\n";       // %eax = left * right
+        std::cout << "    imul %ebx, %eax\n"; // %eax = left * right
         return 0;
     }
 
     // Division and modulo both use idivl: dividend (left) in %eax, divisor (right) in %ebx.
-    std::cout << "    xchg %eax, %ebx\n";           // %eax = left (dividend), %ebx = right (divisor)
-    std::cout << "    cdq\n";                       // sign-extend %eax into %edx:%eax
-    std::cout << "    idivl %ebx\n";                // quotient in %eax, remainder in %edx
+    std::cout << "    xchg %eax, %ebx\n"; // %eax = left (dividend), %ebx = right (divisor)
+    std::cout << "    cdq\n";             // sign-extend %eax into %edx:%eax
+    std::cout << "    idivl %ebx\n";      // quotient in %eax, remainder in %edx
 
     if (ctx->op->getType() == ifccParser::MODULO)
     {
-        std::cout << "    movl %edx, %eax\n";       // modulo: keep the remainder
+        std::cout << "    movl %edx, %eax\n"; // modulo: keep the remainder
     }
 
     return 0;
-}
-
-antlrcpp::Any AsmGeneratorVisitor::visitBracketed_expression(ifccParser::Bracketed_expressionContext *ctx)
-{
-    return this->visit(ctx->expression());
 }
 
 antlrcpp::Any AsmGeneratorVisitor::visitConstant_expression(ifccParser::Constant_expressionContext *ctx)
@@ -155,7 +158,7 @@ antlrcpp::Any AsmGeneratorVisitor::visitConstant_expression(ifccParser::Constant
 
 antlrcpp::Any AsmGeneratorVisitor::visitVariable_expression(ifccParser::Variable_expressionContext *ctx)
 {
-    int offset = symbolTable.at(ctx->VARIABLE()->getText()).offset;
+    int offset = symbolTable.at(ctx->IDENTIFIER()->getText()).offset;
     std::cout << "    movl " << offset << "(%rbp), %eax\n";
     return 0;
 }

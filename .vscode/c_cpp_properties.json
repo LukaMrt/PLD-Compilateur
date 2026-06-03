@@ -5,11 +5,14 @@
             "includePath": [
                 "${workspaceFolder}",
                 "${workspaceFolder}/include",
-                "/opt/homebrew/Cellar/antlr4-cpp-runtime/4.13.2_1/include/antlr4-runtime"
+                "/opt/homebrew/Cellar/antlr4-cpp-runtime/4.13.2_1/include/antlr4-runtime",
+                "/usr/include/antlr4-runtime"
             ],
             "compilerPath": "/usr/bin/clang++",
             "cppStandard": "c++17",
-            "macFrameworkPath": ["/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks"]
+            "macFrameworkPath": [
+                "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks"
+            ]
         }
     ],
     "version": 4

@@ -1,85 +1,57 @@
 #include "SymbolTableVisitor.h"
 
-antlrcpp::Any SymbolTableVisitor::visitProg(ifccParser::ProgContext *ctx)
+antlrcpp::Any SymbolTableVisitor::visitFunction(ifccParser::FunctionContext *ctx)
 {
-    for (auto statement : ctx->statement())
-    {
-        this->visit(statement);
-    }
+    this->visitChildren(ctx);
 
     for (auto &entry : symbolTable)
     {
         if (!entry.second.used)
         {
-            std::cerr << "Warning: variable '" << entry.first << "' declared but never used." << std::endl;
+            std::cerr << "Warning: variable '" << entry.first << "' defined but never used." << std::endl;
         }
     }
 
     return 0;
 }
 
-antlrcpp::Any SymbolTableVisitor::visitVariable_assignment(ifccParser::Variable_assignmentContext *ctx)
+antlrcpp::Any SymbolTableVisitor::visitFunction_variable_declaration(ifccParser::Function_variable_declarationContext *ctx)
 {
-    if (ctx->variable_creation())
+    for (auto variableName : ctx->IDENTIFIER())
     {
-        return this->visit(ctx->variable_creation());
+        std::string varName = variableName->getText();
+        this->declareVariable(varName);
     }
-
-    std::string varName = ctx->VARIABLE()->getText();
-    if (!isDeclared(varName))
-    {
-        std::cerr << "Error: variable '" << varName << "' not declared." << std::endl;
-        exit(1);
-    }
-
-    this->visit(ctx->expression());
-
     return 0;
 }
 
-antlrcpp::Any SymbolTableVisitor::visitVariable_creation(ifccParser::Variable_creationContext *ctx)
+antlrcpp::Any SymbolTableVisitor::visitVariable_definition_with_instruction(ifccParser::Variable_definition_with_instructionContext *ctx)
 {
+    std::string varName = ctx->IDENTIFIER()->getText();
+    this->declareVariable(varName);
     return visitChildren(ctx);
 }
 
-antlrcpp::Any SymbolTableVisitor::visitVariable_creation_without_initialization(ifccParser::Variable_creation_without_initializationContext *ctx)
+antlrcpp::Any SymbolTableVisitor::visitVariable_definition_without_instruction(ifccParser::Variable_definition_without_instructionContext *ctx)
 {
-    std::string varName = ctx->VARIABLE()->getText();
-
-    if (isDeclared(varName))
-    {
-        std::cerr << "Error: variable '" << varName << "' is already declared." << std::endl;
-        exit(1);
-    }
-    symbolTable[varName] = {nextOffset, false};
-    nextOffset -= 4;
+    std::string varName = ctx->IDENTIFIER()->getText();
+    this->declareVariable(varName);
     return 0;
 }
 
-antlrcpp::Any SymbolTableVisitor::visitVariable_creation_with_initialization(ifccParser::Variable_creation_with_initializationContext *ctx)
+antlrcpp::Any SymbolTableVisitor::visitInstruction(ifccParser::InstructionContext *ctx)
 {
-    std::string varName = ctx->VARIABLE()->getText();
-
-    if (isDeclared(varName))
+    if (ctx->IDENTIFIER() != nullptr)
     {
-        std::cerr << "Error: variable '" << varName << "' is already declared." << std::endl;
-        exit(1);
+        std::string varName = ctx->IDENTIFIER()->getText();
+        this->useVariable(varName);
     }
-    symbolTable[varName] = {nextOffset, false};
-    nextOffset -= 4;
-    return 0;
+    return visitChildren(ctx);
 }
 
 antlrcpp::Any SymbolTableVisitor::visitVariable_expression(ifccParser::Variable_expressionContext *ctx)
 {
-    std::string varName = ctx->VARIABLE()->getText();
-
-    if (!isDeclared(varName))
-    {
-        std::cerr << "Error: variable '" << varName << "' not declared." << std::endl;
-        exit(1);
-    }
-
-    symbolTable[varName].used = true;
-    return symbolTable[varName].offset;
+    std::string varName = ctx->IDENTIFIER()->getText();
+    this->useVariable(varName);
+    return 0;
 }
