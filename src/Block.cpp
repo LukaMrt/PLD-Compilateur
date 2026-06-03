@@ -1,6 +1,6 @@
-#include "BasicBlock.h"
+#include "Block.h"
 
-void BasicBlock::generateASM(Backend &backend, ostream &output)
+void Block::generateASM(Backend &backend, ostream &output)
 {
     backend.emitBlockLabel(this, output);
     for (Instruction *instruction : instructions)

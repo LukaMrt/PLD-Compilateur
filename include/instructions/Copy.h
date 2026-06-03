@@ -1,18 +1,21 @@
-#include "../IR.h"
+#pragma once
+
+#include <string>
+#include "../Instruction.h"
 #include "../Backend.h"
 
 class Copy : public Instruction
 {
 public:
-    Copy(Block *block, Type type, string destination, string src)
+    Copy(Block *block, Type type, std::string destination, std::string src)
         : Instruction(block, type), destination(destination), src(src) {}
 
-    void generate(Backend &backend, ostream &output) override;
+    void generate(Backend &backend, std::ostream &output) override;
 
-    string getDestination() const { return destination; }
-    string getSrc() const { return src; }
+    std::string getDestination() const { return destination; }
+    std::string getSrc() const { return src; }
 
 private:
-    string destination;
-    string src;
+    std::string destination;
+    std::string src;
 };

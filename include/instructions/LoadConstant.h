@@ -1,18 +1,21 @@
-#include "../IR.h"
+#pragma once
+
+#include <string>
+#include "../Instruction.h"
 #include "../Backend.h"
 
 class LoadConstant : public Instruction
 {
 public:
-    LoadConstant(Block *block, Type type, string destination, int value)
+    LoadConstant(Block *block, Type type, std::string destination, int value)
         : Instruction(block, type), destination(destination), value(value) {}
 
-    void generate(Backend &backend, ostream &output) override;
+    void generate(Backend &backend, std::ostream &output) override;
 
-    string getDestination() const { return destination; }
+    std::string getDestination() const { return destination; }
     int getValue() const { return value; }
 
 private:
-    string destination;
+    std::string destination;
     int value;
 };

@@ -1,20 +1,23 @@
-#include "../IR.h"
+#pragma once
+
+#include <string>
+#include "../Instruction.h"
 #include "../Backend.h"
 
 class Add : public Instruction
 {
 public:
-    Add(Block *block, Type type, string destination, string left, string right)
+    Add(Block *block, Type type, std::string destination, std::string left, std::string right)
         : Instruction(block, type), destination(destination), left(left), right(right) {}
 
-    void generate(Backend &backend, ostream &output) override;
+    void generate(Backend &backend, std::ostream &output) override;
 
-    string getDestination() const { return destination; }
-    string getLeft() const { return left; }
-    string getRight() const { return right; }
+    std::string getDestination() const { return destination; }
+    std::string getLeft() const { return left; }
+    std::string getRight() const { return right; }
 
 private:
-    string destination;
-    string left;
-    string right;
+    std::string destination;
+    std::string left;
+    std::string right;
 };
