@@ -12,18 +12,17 @@ class AsmGeneratorVisitor : public ifccBaseVisitor {
         AsmGeneratorVisitor(const std::map<std::string, SymbolTableVisitor::VariableInfo> &symbolTable)
             : symbolTable(symbolTable) {}
 
-        virtual antlrcpp::Any visitProg(ifccParser::ProgContext *ctx) override;
+        virtual antlrcpp::Any visitFunction(ifccParser::FunctionContext *ctx) override;
         virtual antlrcpp::Any visitReturn_statement(ifccParser::Return_statementContext *ctx) override;
-        virtual antlrcpp::Any visitVariable_creation(ifccParser::Variable_creationContext *ctx) override;
-        virtual antlrcpp::Any visitVariable_creation_with_initialization(ifccParser::Variable_creation_with_initializationContext *ctx) override;
-        virtual antlrcpp::Any visitVariable_creation_without_initialization(ifccParser::Variable_creation_without_initializationContext *ctx) override;
-        // virtual antlrcpp::Any visitVariable_assignment(ifccParser::Variable_assignmentContext *ctx) override;
+        virtual antlrcpp::Any visitVariable_declaration(ifccParser::Variable_declarationContext *ctx) override;
+        virtual antlrcpp::Any visitVariable_definition_with_instruction(ifccParser::Variable_definition_with_instructionContext *ctx) override;
+        virtual antlrcpp::Any visitVariable_definition_without_instruction(ifccParser::Variable_definition_without_instructionContext *ctx) override;
+        virtual antlrcpp::Any visitInstruction(ifccParser::InstructionContext *ctx) override;
         virtual antlrcpp::Any visitConstant_expression(ifccParser::Constant_expressionContext *ctx) override;
         virtual antlrcpp::Any visitVariable_expression(ifccParser::Variable_expressionContext *ctx) override;
         virtual antlrcpp::Any visitUnary_operation(ifccParser::Unary_operationContext *ctx) override;
         virtual antlrcpp::Any visitAdditive_expression(ifccParser::Additive_expressionContext *ctx) override;
         virtual antlrcpp::Any visitMultiplicative_expression(ifccParser::Multiplicative_expressionContext *ctx) override;
-        virtual antlrcpp::Any visitBracketed_expression(ifccParser::Bracketed_expressionContext *ctx) override;
 
     private:
         std::map<std::string, SymbolTableVisitor::VariableInfo> symbolTable;
