@@ -43,9 +43,9 @@ expression
     | expression op=(PLUS | MINUS) expression                                          # additive_expression
     | expression op=(LESSER | LESSER_OR_EQUAL | GREATER_OR_EQUAL | GREATER) expression # comparison_expression
     | expression op=(COMPARE_EQUAL | NOT_EQUAL) expression                             # equal_expression
-    | expression BITWISE_AND expression.                                               # bitwise_and_expression
-    | expression BITWISE_XOR expression.                                               # bitwise_xor_expression
-    | expression BITWISE_OR expression.                                                # bitwise_or_expression
+    | expression BITWISE_AND expression                                                # bitwise_and_expression
+    | expression BITWISE_XOR expression                                                # bitwise_xor_expression
+    | expression BITWISE_OR expression                                                 # bitwise_or_expression
     | BRACKET_OPEN instruction BRACKET_CLOSE                                           # bracketed_expression
     | CONSTANT                                                                         # constant_expression
     | CHARACTER                                                                        # character_expression
