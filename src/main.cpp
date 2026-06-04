@@ -73,10 +73,10 @@ int main(int argn, const char **argv)
     irVisitor.visit(tree);
 
     if (debugIR)
-        irVisitor.getCFG()->debug(std::cerr);
+        irVisitor.getCurrentCFG()->debug(std::cerr);
 
     X86Backend backend;
-    irVisitor.getCFG()->generateASM(backend, std::cout);
+    irVisitor.getCurrentCFG()->generateASM(backend, std::cout);
 
     return 0;
 }

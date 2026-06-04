@@ -12,6 +12,7 @@
 #include "instructions/BitwiseAnd.h"
 #include "instructions/BitwiseOr.h"
 #include "instructions/BitwiseXor.h"
+#include "instructions/CallFunction.h"
 
 void X86Backend::emitPrologue(ControlFlowGraph *cfg, std::ostream &output)
 {
@@ -130,4 +131,9 @@ void X86Backend::emit(BitwiseXor *instr, std::ostream &output)
     output << "    movl " << varToLocation(instr->getLeft(), cfg) << ", %eax\n";
     output << "    xorl " << varToLocation(instr->getRight(), cfg) << ", %eax\n";
     output << "    movl %eax, " << varToLocation(instr->getDestination(), cfg) << "\n";
+}
+
+void X86Backend::emit(CallFunction *instr, std::ostream &output)
+{
+    output << "    call " << instr->getFunctionName() << "\n"; // il faut ajouter les paramètres là potentiellement dans le call
 }

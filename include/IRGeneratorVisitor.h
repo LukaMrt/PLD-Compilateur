@@ -12,9 +12,9 @@ class IRGeneratorVisitor : public ifccBaseVisitor
 {
 public:
     IRGeneratorVisitor(const std::map<std::string, SymbolTableVisitor::VariableInfo> &symbolTable)
-        : symbolTable(symbolTable), cfg(nullptr) {}
+        : symbolTable(symbolTable), currentCFG(nullptr) {}
 
-    ControlFlowGraph *getCFG() const { return cfg; }
+    ControlFlowGraph *getCurrentCFG() const { return currentCFG; }
 
     virtual antlrcpp::Any visitFunction(ifccParser::FunctionContext *ctx) override;
     virtual antlrcpp::Any visitReturn_statement(ifccParser::Return_statementContext *ctx) override;
@@ -43,5 +43,6 @@ private:
     std::string emitConstant(Type type, int value);
 
     std::map<std::string, SymbolTableVisitor::VariableInfo> symbolTable;
-    ControlFlowGraph *cfg;
+    std::map<std::string, ControlFlowGraph *> cfgs;
+    ControlFlowGraph *currentCFG;
 };
