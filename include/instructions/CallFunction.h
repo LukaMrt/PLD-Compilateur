@@ -1,23 +1,25 @@
 #pragma once
 
-#include "Instruction.h"
-#include "struct/Variable.h"
-#include "ControlFlowGraph.h"
+#include <string>
+#include "../Instruction.h"
+#include "backend/Backend.h"
 
-using namespace std;
-
-class CallFunction : public Instruction 
+class CallFunction : public Instruction
 {
-    public:
-        void generate(Backend &backend, std::ostream &output) override ;
-        
-        void debug(std::ostream &output) const override;
+public:
+    CallFunction(Block *block, Type type, std::string destination, std::string functionName)
+        : Instruction(block, type), destination(destination), functionName(functionName) {}
 
-        string getFunctionName() const;
+    void generate(Backend &backend, std::ostream &output) override;
+    void debug(std::ostream &output) const override
+    {
+        output << "  Call          " << destination << " = " << functionName << "()\n";
+    }
 
-        vector <Variable> getArguments() const;
+    std::string getDestination() const { return destination; }
+    std::string getFunctionName() const { return functionName; }
 
-    private:
-        string functionName;
-        vector <Variable> arguments;
+private:
+    std::string destination;
+    std::string functionName;
 };

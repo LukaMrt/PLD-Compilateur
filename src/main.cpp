@@ -73,10 +73,12 @@ int main(int argn, const char **argv)
     irVisitor.visit(tree);
 
     if (debugIR)
-        irVisitor.getCurrentCFG()->debug(std::cerr);
+        for (const auto &[name, cfg] : irVisitor.getCFGs())
+            cfg->debug(std::cerr);
 
     X86Backend backend;
-    irVisitor.getCurrentCFG()->generateASM(backend, std::cout);
+    for (const auto &[name, cfg] : irVisitor.getCFGs())
+        cfg->generateASM(backend, std::cout);
 
     return 0;
 }

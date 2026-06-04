@@ -11,6 +11,7 @@
 #include "instructions/BitwiseAnd.h"
 #include "instructions/BitwiseOr.h"
 #include "instructions/BitwiseXor.h"
+#include "instructions/CallFunction.h"
 
 static std::string asString(antlrcpp::Any any)
 {
@@ -41,6 +42,7 @@ antlrcpp::Any IRGeneratorVisitor::visitFunction(ifccParser::FunctionContext *ctx
 {
     std::string funcName = ctx->IDENTIFIER()->getText();
     Type returnType = stringToType(ctx->TYPE()->getText());
+    functionReturnTypes[funcName] = returnType;
     cfgs[funcName] = new ControlFlowGraph(funcName);
     currentCFG = cfgs[funcName];
     currentCFG->addVariable("$return", returnType);
@@ -116,6 +118,21 @@ antlrcpp::Any IRGeneratorVisitor::visitCharacter_expression(ifccParser::Characte
 antlrcpp::Any IRGeneratorVisitor::visitVariable_expression(ifccParser::Variable_expressionContext *ctx)
 {
     return ctx->IDENTIFIER()->getText();
+}
+
+antlrcpp::Any IRGeneratorVisitor::visitFunction_call(ifccParser::Function_callContext *ctx)
+{
+    std::string funcName = ctx->IDENTIFIER()->getText();
+
+    // Les paramètres ne sont pas encore gérés : on émet seulement l'appel et on
+    // récupère la valeur de retour (placée dans %eax) dans une temporaire.
+    // Repli sur INT32 si la fonction n'a pas encore été vue (appel en avant).
+    auto it = functionReturnTypes.find(funcName);
+    Type type = it != functionReturnTypes.end() ? it->second : Type::INT32;
+    std::string tmp = currentCFG->addTempVariable(type);
+    Block *block = currentCFG->getCurrentBlock();
+    block->addInstruction(new CallFunction(block, type, tmp, funcName));
+    return tmp;
 }
 
 antlrcpp::Any IRGeneratorVisitor::visitUnary_operation(ifccParser::Unary_operationContext *ctx)

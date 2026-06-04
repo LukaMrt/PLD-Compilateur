@@ -20,13 +20,19 @@ void X86Backend::emitPrologue(ControlFlowGraph *cfg, std::ostream &output)
     output << cfg->getLabel() << ":\n";
     output << "    pushq %rbp\n";
     output << "    movq %rsp, %rbp\n";
+
+    // Réserve le cadre de pile pour les variables locales, aligné sur 16 octets
+    // (exigence de l'ABI System V) afin que %rsp soit en dessous des locales :
+    // sinon un `call` écraserait celles-ci en y empilant l'adresse de retour.
+    int frameSize = (cfg->getCurrentOffset() + 15) & ~15;
+    if (frameSize > 0)
+        output << "    subq $" << frameSize << ", %rsp\n";
 }
 
 void X86Backend::emitEpilogue(ControlFlowGraph *cfg, std::ostream &output)
 {
     output << "    movl " << varToLocation("$return", cfg) << ", %eax\n";
-    output << "    movq %rbp, %rsp\n";
-    output << "    popq %rbp\n";
+    output << "    leave\n";
     output << "    ret\n";
 }
 
@@ -135,5 +141,7 @@ void X86Backend::emit(BitwiseXor *instr, std::ostream &output)
 
 void X86Backend::emit(CallFunction *instr, std::ostream &output)
 {
-    output << "    call " << instr->getFunctionName() << "\n"; // il faut ajouter les paramètres là potentiellement dans le call
+    ControlFlowGraph *cfg = instr->getBlock()->getControlFlowGraph();
+    output << "    call " << instr->getFunctionName() << "\n";
+    output << "    movl %eax, " << varToLocation(instr->getDestination(), cfg) << "\n";
 }
