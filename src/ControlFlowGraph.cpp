@@ -18,7 +18,7 @@ void ControlFlowGraph::addVariable(std::string name, Type type)
 
 std::string ControlFlowGraph::addTempVariable(Type type)
 {
-    std::string tempVarName = "temp" + std::to_string(variableMap.size());
+    std::string tempVarName = "$temp" + std::to_string(variableMap.size());
     addVariable(tempVarName, type);
     return tempVarName;
 }
