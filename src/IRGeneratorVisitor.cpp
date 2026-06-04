@@ -17,6 +17,26 @@ static std::string asString(antlrcpp::Any any)
     return std::any_cast<std::string>(any);
 }
 
+bool IRGeneratorVisitor::isConstant(const std::string &v, int &out) const
+{
+    auto it = knownConstants.find(v);
+    if (it == knownConstants.end())
+    {
+        return false;
+    }
+    out = it->second;
+    return true;
+}
+
+std::string IRGeneratorVisitor::emitConstant(Type type, int value)
+{
+    std::string tmp = cfg->addTempVariable(type);
+    Block *block = cfg->getCurrentBlock();
+    block->addInstruction(new LoadConstant(block, type, tmp, value));
+    knownConstants[tmp] = value;
+    return tmp;
+}
+
 antlrcpp::Any IRGeneratorVisitor::visitFunction(ifccParser::FunctionContext *ctx)
 {
     std::string funcName = ctx->IDENTIFIER()->getText();
@@ -82,22 +102,14 @@ antlrcpp::Any IRGeneratorVisitor::visitReturn_statement(ifccParser::Return_state
 antlrcpp::Any IRGeneratorVisitor::visitConstant_expression(ifccParser::Constant_expressionContext *ctx)
 {
     int value = std::stoi(ctx->CONSTANT()->getText());
-    std::string tmp = cfg->addTempVariable(Type::INT32);
-
-    Block *block = cfg->getCurrentBlock();
-    block->addInstruction(new LoadConstant(block, Type::INT32, tmp, value));
-    return tmp;
+    return emitConstant(Type::INT32, value);
 }
 
 antlrcpp::Any IRGeneratorVisitor::visitCharacter_expression(ifccParser::Character_expressionContext *ctx)
 {
     // Le texte du token CHARACTER est "'A'" : le caractère utile est à l'indice 1.
     int value = ctx->CHARACTER()->getText()[1];
-    std::string tmp = cfg->addTempVariable(Type::CHAR);
-
-    Block *block = cfg->getCurrentBlock();
-    block->addInstruction(new LoadConstant(block, Type::CHAR, tmp, value));
-    return tmp;
+    return emitConstant(Type::CHAR, value);
 }
 
 antlrcpp::Any IRGeneratorVisitor::visitVariable_expression(ifccParser::Variable_expressionContext *ctx)
@@ -109,8 +121,14 @@ antlrcpp::Any IRGeneratorVisitor::visitUnary_operation(ifccParser::Unary_operati
 {
     std::string srcVar = asString(visit(ctx->expression()));
     Type type = promote(cfg->getVar(srcVar).type, cfg->getVar(srcVar).type);
-    std::string tmp = cfg->addTempVariable(type);
 
+    int srcValue;
+    if (ctx->op->getType() == ifccParser::MINUS && isConstant(srcVar, srcValue))
+    {
+        return emitConstant(type, -srcValue);
+    }
+
+    std::string tmp = cfg->addTempVariable(type);
     Block *block = cfg->getCurrentBlock();
     if (ctx->op->getType() == ifccParser::MINUS)
     {
@@ -135,10 +153,29 @@ antlrcpp::Any IRGeneratorVisitor::visitAdditive_expression(ifccParser::Additive_
     std::string left = asString(visit(ctx->expression(0)));
     std::string right = asString(visit(ctx->expression(1)));
     Type type = promote(cfg->getVar(left).type, cfg->getVar(right).type);
-    std::string tmp = cfg->addTempVariable(type);
+    bool isAddition = ctx->op->getType() == ifccParser::PLUS;
 
+    int leftValue, rightValue;
+    bool leftIsConstant = isConstant(left, leftValue);
+    bool rightIsConstant = isConstant(right, rightValue);
+
+    if (leftIsConstant && rightIsConstant)
+    {
+        return emitConstant(type, isAddition ? leftValue + rightValue : leftValue - rightValue);
+    }
+    // Élément neutre 0 : x + 0, x - 0, 0 + x
+    if (rightIsConstant && rightValue == 0)
+    {
+        return left;
+    }
+    if (leftIsConstant && leftValue == 0 && isAddition)
+    {
+        return right;
+    }
+
+    std::string tmp = cfg->addTempVariable(type);
     Block *block = cfg->getCurrentBlock();
-    if (ctx->op->getType() == ifccParser::PLUS)
+    if (isAddition)
     {
         block->addInstruction(new Add(block, type, tmp, left, right));
     }
@@ -155,14 +192,52 @@ antlrcpp::Any IRGeneratorVisitor::visitMultiplicative_expression(ifccParser::Mul
     std::string left = asString(visit(ctx->expression(0)));
     std::string right = asString(visit(ctx->expression(1)));
     Type type = promote(cfg->getVar(left).type, cfg->getVar(right).type);
-    std::string tmp = cfg->addTempVariable(type);
+    size_t op = ctx->op->getType();
 
+    int leftValue, rightValue;
+    bool leftIsConstant = isConstant(left, leftValue);
+    bool rightIsConstant = isConstant(right, rightValue);
+
+    // Pliage : on évite de plier une division/modulo par zéro (laissée au runtime).
+    bool divisionByZero = (op != ifccParser::TIMES) && rightIsConstant && rightValue == 0;
+    if (leftIsConstant && rightIsConstant && !divisionByZero)
+    {
+        int result = op == ifccParser::TIMES  ? leftValue * rightValue
+                     : op == ifccParser::DIVIDE ? leftValue / rightValue
+                                                : leftValue % rightValue;
+        return emitConstant(type, result);
+    }
+
+    if (op == ifccParser::TIMES)
+    {
+        // Élément absorbant : x * 0 == 0
+        if ((leftIsConstant && leftValue == 0) || (rightIsConstant && rightValue == 0))
+        {
+            return emitConstant(type, 0);
+        }
+        // Élément neutre : x * 1, 1 * x
+        if (rightIsConstant && rightValue == 1)
+        {
+            return left;
+        }
+        if (leftIsConstant && leftValue == 1)
+        {
+            return right;
+        }
+    }
+    else if (op == ifccParser::DIVIDE && rightIsConstant && rightValue == 1)
+    {
+        // Élément neutre : x / 1
+        return left;
+    }
+
+    std::string tmp = cfg->addTempVariable(type);
     Block *block = cfg->getCurrentBlock();
-    if (ctx->op->getType() == ifccParser::TIMES)
+    if (op == ifccParser::TIMES)
     {
         block->addInstruction(new Multiply(block, type, tmp, left, right));
     }
-    else if (ctx->op->getType() == ifccParser::DIVIDE)
+    else if (op == ifccParser::DIVIDE)
     {
         block->addInstruction(new Divide(block, type, tmp, left, right));
     }
@@ -179,8 +254,22 @@ antlrcpp::Any IRGeneratorVisitor::visitBitwise_and_expression(ifccParser::Bitwis
     std::string left = asString(visit(ctx->expression(0)));
     std::string right = asString(visit(ctx->expression(1)));
     Type type = promote(cfg->getVar(left).type, cfg->getVar(right).type);
-    std::string tmp = cfg->addTempVariable(type);
 
+    int leftValue, rightValue;
+    bool leftIsConstant = isConstant(left, leftValue);
+    bool rightIsConstant = isConstant(right, rightValue);
+
+    if (leftIsConstant && rightIsConstant)
+    {
+        return emitConstant(type, leftValue & rightValue);
+    }
+    // Élément absorbant : x & 0 == 0
+    if ((leftIsConstant && leftValue == 0) || (rightIsConstant && rightValue == 0))
+    {
+        return emitConstant(type, 0);
+    }
+
+    std::string tmp = cfg->addTempVariable(type);
     Block *block = cfg->getCurrentBlock();
     block->addInstruction(new BitwiseAnd(block, type, tmp, left, right));
     return tmp;
@@ -191,8 +280,26 @@ antlrcpp::Any IRGeneratorVisitor::visitBitwise_or_expression(ifccParser::Bitwise
     std::string left = asString(visit(ctx->expression(0)));
     std::string right = asString(visit(ctx->expression(1)));
     Type type = promote(cfg->getVar(left).type, cfg->getVar(right).type);
-    std::string tmp = cfg->addTempVariable(type);
 
+    int leftValue, rightValue;
+    bool leftIsConstant = isConstant(left, leftValue);
+    bool rightIsConstant = isConstant(right, rightValue);
+
+    if (leftIsConstant && rightIsConstant)
+    {
+        return emitConstant(type, leftValue | rightValue);
+    }
+    // Élément neutre : x | 0, 0 | x
+    if (rightIsConstant && rightValue == 0)
+    {
+        return left;
+    }
+    if (leftIsConstant && leftValue == 0)
+    {
+        return right;
+    }
+
+    std::string tmp = cfg->addTempVariable(type);
     Block *block = cfg->getCurrentBlock();
     block->addInstruction(new BitwiseOr(block, type, tmp, left, right));
     return tmp;
@@ -203,8 +310,26 @@ antlrcpp::Any IRGeneratorVisitor::visitBitwise_xor_expression(ifccParser::Bitwis
     std::string left = asString(visit(ctx->expression(0)));
     std::string right = asString(visit(ctx->expression(1)));
     Type type = promote(cfg->getVar(left).type, cfg->getVar(right).type);
-    std::string tmp = cfg->addTempVariable(type);
 
+    int leftValue, rightValue;
+    bool leftIsConstant = isConstant(left, leftValue);
+    bool rightIsConstant = isConstant(right, rightValue);
+
+    if (leftIsConstant && rightIsConstant)
+    {
+        return emitConstant(type, leftValue ^ rightValue);
+    }
+    // Élément neutre : x ^ 0, 0 ^ x
+    if (rightIsConstant && rightValue == 0)
+    {
+        return left;
+    }
+    if (leftIsConstant && leftValue == 0)
+    {
+        return right;
+    }
+
+    std::string tmp = cfg->addTempVariable(type);
     Block *block = cfg->getCurrentBlock();
     block->addInstruction(new BitwiseXor(block, type, tmp, left, right));
     return tmp;

@@ -109,7 +109,7 @@ docker-gcc-asm: docker-build
 ##########################################
 test: ifcc
 	@echo ">>> Running tests..."
-	@python3 tests/ifcc-test.py tests/cases
+	@python3 -u tests/ifcc-test.py tests/cases
 
 clean:
 	@echo ">>> Cleaning build artifacts..."

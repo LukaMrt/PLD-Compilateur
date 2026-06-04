@@ -33,6 +33,15 @@ public:
     virtual antlrcpp::Any visitBitwise_xor_expression(ifccParser::Bitwise_xor_expressionContext *ctx) override;
 
 private:
+    // Optimisation par pliage de constantes : associe un nom de variable temporaire
+    // à sa valeur connue à la compilation. Ne contient que des temps non mutables.
+    std::map<std::string, int> knownConstants;
+
+    // Renvoie true si v est une constante connue ; place alors sa valeur dans out.
+    bool isConstant(const std::string &v, int &out) const;
+    // Émet un LoadConstant dans un nouveau temp, l'enregistre comme constant et renvoie son nom.
+    std::string emitConstant(Type type, int value);
+
     std::map<std::string, SymbolTableVisitor::VariableInfo> symbolTable;
     ControlFlowGraph *cfg;
 };

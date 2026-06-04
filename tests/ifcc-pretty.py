@@ -10,6 +10,23 @@ DIM    = "\033[2m"
 RESET  = "\033[0m"
 
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), '..', 'ifcc-test-output')
+CASES_DIR  = os.path.join(os.path.dirname(__file__), 'cases')
+
+# Nombre total de cas attendus, pour dimensionner la barre de progression.
+try:
+    total_cases = len([f for f in os.listdir(CASES_DIR) if f.endswith('.c')])
+except OSError:
+    total_cases = 0
+
+def draw_progress(done):
+    if total_cases <= 0:
+        return
+    width = 24
+    filled = int(width * done / total_cases)
+    bar = '█' * filled + ' ' * (width - filled)
+    # Sur stderr + \r : barre en place, sans polluer la sortie finale (stdout).
+    sys.stderr.write(f"\r{DIM}[{bar}] {done}/{total_cases}{RESET}")
+    sys.stderr.flush()
 
 passed = []
 failed = []  # list of (raw_name, reason)
@@ -48,6 +65,7 @@ for line in sys.stdin:
         if current_name:
             passed.append(current_name)
         current_raw = current_name = None
+        draw_progress(len(passed) + len(failed))
         continue
 
     m = re.match(r'^TEST FAIL\s*(?:\((.+)\))?$', line)
@@ -56,12 +74,17 @@ for line in sys.stdin:
         if current_name:
             failed.append((current_raw, current_name, reason))
         current_raw = current_name = None
+        draw_progress(len(passed) + len(failed))
         continue
 
     # Non-test line (build output, etc.) — pass through immediately
     print(line, flush=True)
 
 # ── Results ──────────────────────────────────────────────────────────────────
+
+# Efface la ligne de progression avant le récapitulatif.
+sys.stderr.write("\r\033[K")
+sys.stderr.flush()
 
 passed.sort(key=lambda n: parse_name(n)[0])
 failed.sort(key=lambda x: parse_name(x[1])[0])
