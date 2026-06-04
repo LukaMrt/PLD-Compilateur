@@ -34,10 +34,8 @@ antlrcpp::Any IRGeneratorVisitor::visitVariable_definition_without_instruction(i
     std::string varName = ctx->IDENTIFIER()->getText();
     cfg->addVariable(varName, Type::INT32);
 
-    std::string tmp = cfg->addTempVariable(Type::INT32);
     Block *block = cfg->getCurrentBlock();
-    block->addInstruction(new LoadConstant(block, Type::INT32, tmp, 0));
-    block->addInstruction(new Copy(block, Type::INT32, varName, tmp));
+    block->addInstruction(new LoadConstant(block, Type::INT32, varName, 0));
     return 0;
 }
 
