@@ -8,6 +8,9 @@
 #include "instructions/Copy.h"
 #include "instructions/LoadConstant.h"
 #include "instructions/Negate.h"
+#include "instructions/BitwiseAnd.h"
+#include "instructions/BitwiseOr.h"
+#include "instructions/BitwiseXor.h"
 
 static std::string asString(antlrcpp::Any any)
 {
@@ -168,5 +171,41 @@ antlrcpp::Any IRGeneratorVisitor::visitMultiplicative_expression(ifccParser::Mul
         block->addInstruction(new Modulo(block, type, tmp, left, right));
     }
 
+    return tmp;
+}
+
+antlrcpp::Any IRGeneratorVisitor::visitBitwise_and_expression(ifccParser::Bitwise_and_expressionContext *ctx)
+{
+    std::string left = asString(visit(ctx->expression(0)));
+    std::string right = asString(visit(ctx->expression(1)));
+    Type type = promote(cfg->getVar(left).type, cfg->getVar(right).type);
+    std::string tmp = cfg->addTempVariable(type);
+
+    Block *block = cfg->getCurrentBlock();
+    block->addInstruction(new BitwiseAnd(block, type, tmp, left, right));
+    return tmp;
+}
+
+antlrcpp::Any IRGeneratorVisitor::visitBitwise_or_expression(ifccParser::Bitwise_or_expressionContext *ctx)
+{
+    std::string left = asString(visit(ctx->expression(0)));
+    std::string right = asString(visit(ctx->expression(1)));
+    Type type = promote(cfg->getVar(left).type, cfg->getVar(right).type);
+    std::string tmp = cfg->addTempVariable(type);
+
+    Block *block = cfg->getCurrentBlock();
+    block->addInstruction(new BitwiseOr(block, type, tmp, left, right));
+    return tmp;
+}
+
+antlrcpp::Any IRGeneratorVisitor::visitBitwise_xor_expression(ifccParser::Bitwise_xor_expressionContext *ctx)
+{
+    std::string left = asString(visit(ctx->expression(0)));
+    std::string right = asString(visit(ctx->expression(1)));
+    Type type = promote(cfg->getVar(left).type, cfg->getVar(right).type);
+    std::string tmp = cfg->addTempVariable(type);
+
+    Block *block = cfg->getCurrentBlock();
+    block->addInstruction(new BitwiseXor(block, type, tmp, left, right));
     return tmp;
 }

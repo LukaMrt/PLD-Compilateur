@@ -28,6 +28,9 @@ public:
     virtual antlrcpp::Any visitBracketed_expression(ifccParser::Bracketed_expressionContext *ctx) override;
     virtual antlrcpp::Any visitAdditive_expression(ifccParser::Additive_expressionContext *ctx) override;
     virtual antlrcpp::Any visitMultiplicative_expression(ifccParser::Multiplicative_expressionContext *ctx) override;
+    virtual antlrcpp::Any visitBitwise_and_expression(ifccParser::Bitwise_and_expressionContext *ctx) override;
+    virtual antlrcpp::Any visitBitwise_or_expression(ifccParser::Bitwise_or_expressionContext *ctx) override;
+    virtual antlrcpp::Any visitBitwise_xor_expression(ifccParser::Bitwise_xor_expressionContext *ctx) override;
 
 private:
     std::map<std::string, SymbolTableVisitor::VariableInfo> symbolTable;

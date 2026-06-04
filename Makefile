@@ -37,7 +37,10 @@ OBJECTS=build/ifccBaseVisitor.o \
 	build/instructions/Modulo.o \
 	build/instructions/Copy.o \
 	build/instructions/LoadConstant.o \
-	build/instructions/Negate.o
+	build/instructions/Negate.o \
+	build/instructions/BitwiseAnd.o \
+	build/instructions/BitwiseOr.o \
+	build/instructions/BitwiseXor.o
 
 ifcc: $(OBJECTS)
 	@mkdir -p build

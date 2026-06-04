@@ -20,4 +20,7 @@ public:
     void emit(Copy *instr, std::ostream &output) override;
     void emit(LoadConstant *instr, std::ostream &output) override;
     void emit(Negate *instr, std::ostream &output) override;
+    void emit(BitwiseAnd *instr, std::ostream &output) override;
+    void emit(BitwiseOr *instr, std::ostream &output) override;
+    void emit(BitwiseXor *instr, std::ostream &output) override;
 };

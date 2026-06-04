@@ -9,6 +9,9 @@
 #include "instructions/Copy.h"
 #include "instructions/LoadConstant.h"
 #include "instructions/Negate.h"
+#include "instructions/BitwiseAnd.h"
+#include "instructions/BitwiseOr.h"
+#include "instructions/BitwiseXor.h"
 
 void X86Backend::emitPrologue(ControlFlowGraph *cfg, std::ostream &output)
 {
@@ -103,4 +106,28 @@ void X86Backend::emit(Modulo *instr, std::ostream &output)
     output << "    cdq\n";
     output << "    idivl " << varToLocation(instr->getRight(), cfg) << "\n";
     output << "    movl %edx, " << varToLocation(instr->getDestination(), cfg) << "\n";
+}
+
+void X86Backend::emit(BitwiseAnd *instr, std::ostream &output)
+{
+    ControlFlowGraph *cfg = instr->getBlock()->getControlFlowGraph();
+    output << "    movl " << varToLocation(instr->getLeft(), cfg) << ", %eax\n";
+    output << "    andl " << varToLocation(instr->getRight(), cfg) << ", %eax\n";
+    output << "    movl %eax, " << varToLocation(instr->getDestination(), cfg) << "\n";
+}
+
+void X86Backend::emit(BitwiseOr *instr, std::ostream &output)
+{
+    ControlFlowGraph *cfg = instr->getBlock()->getControlFlowGraph();
+    output << "    movl " << varToLocation(instr->getLeft(), cfg) << ", %eax\n";
+    output << "    orl " << varToLocation(instr->getRight(), cfg) << ", %eax\n";
+    output << "    movl %eax, " << varToLocation(instr->getDestination(), cfg) << "\n";
+}
+
+void X86Backend::emit(BitwiseXor *instr, std::ostream &output)
+{
+    ControlFlowGraph *cfg = instr->getBlock()->getControlFlowGraph();
+    output << "    movl " << varToLocation(instr->getLeft(), cfg) << ", %eax\n";
+    output << "    xorl " << varToLocation(instr->getRight(), cfg) << ", %eax\n";
+    output << "    movl %eax, " << varToLocation(instr->getDestination(), cfg) << "\n";
 }

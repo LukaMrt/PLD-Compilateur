@@ -13,6 +13,9 @@ class Modulo;
 class Copy;
 class LoadConstant;
 class Negate;
+class BitwiseAnd;
+class BitwiseOr;
+class BitwiseXor;
 
 class Backend
 {
@@ -34,4 +37,7 @@ public:
     virtual void emit(Copy *instr, std::ostream &output) = 0;
     virtual void emit(LoadConstant *instr, std::ostream &output) = 0;
     virtual void emit(Negate *instr, std::ostream &output) = 0;
+    virtual void emit(BitwiseAnd *instr, std::ostream &output) = 0;
+    virtual void emit(BitwiseOr *instr, std::ostream &output) = 0;
+    virtual void emit(BitwiseXor *instr, std::ostream &output) = 0;
 };
