@@ -2,6 +2,7 @@
 
 #include "antlr4-runtime.h"
 #include "generated/ifccBaseVisitor.h"
+#include "struct/Type.h"
 
 #include <map>
 #include <string>
@@ -12,6 +13,7 @@ public:
         struct VariableInfo
         {
                 bool used;
+                Type type;
         };
 
         virtual antlrcpp::Any visitFunction(ifccParser::FunctionContext *ctx) override;
@@ -29,14 +31,19 @@ private:
                 return symbolTable.find(varName) != symbolTable.end();
         }
 
-        void declareVariable(const std::string &varName)
+        void declareVariable(const std::string &varName, Type type)
         {
+                if (type == Type::VOID)
+                {
+                        std::cerr << "Error: variable '" << varName << "' declared void." << std::endl;
+                        exit(1);
+                }
                 if (isDeclared(varName))
                 {
                         std::cerr << "Error: variable '" << varName << "' is already declared." << std::endl;
                         exit(1);
                 }
-                symbolTable[varName] = {false};
+                symbolTable[varName] = {false, type};
         }
 
         void checkDeclared(const std::string &varName)

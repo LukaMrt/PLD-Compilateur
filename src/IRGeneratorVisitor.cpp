@@ -17,12 +17,13 @@ static std::string asString(antlrcpp::Any any)
 antlrcpp::Any IRGeneratorVisitor::visitFunction(ifccParser::FunctionContext *ctx)
 {
     std::string funcName = ctx->IDENTIFIER()->getText();
+    Type returnType = stringToType(ctx->TYPE()->getText());
     cfg = new ControlFlowGraph(funcName);
-    cfg->addVariable("$return", Type::INT32);
+    cfg->addVariable("$return", returnType);
 
     Block *block = new Block(cfg, funcName + "_entry");
     cfg->addBlock(block);
-    block->addInstruction(new LoadConstant(block, Type::INT32, "$return", 0));
+    block->addInstruction(new LoadConstant(block, returnType, "$return", 0));
 
     visitChildren(ctx);
 
@@ -32,21 +33,23 @@ antlrcpp::Any IRGeneratorVisitor::visitFunction(ifccParser::FunctionContext *ctx
 antlrcpp::Any IRGeneratorVisitor::visitVariable_definition_without_instruction(ifccParser::Variable_definition_without_instructionContext *ctx)
 {
     std::string varName = ctx->IDENTIFIER()->getText();
-    cfg->addVariable(varName, Type::INT32);
+    Type type = symbolTable.at(varName).type;
+    cfg->addVariable(varName, type);
 
     Block *block = cfg->getCurrentBlock();
-    block->addInstruction(new LoadConstant(block, Type::INT32, varName, 0));
+    block->addInstruction(new LoadConstant(block, type, varName, 0));
     return 0;
 }
 
 antlrcpp::Any IRGeneratorVisitor::visitVariable_definition_with_instruction(ifccParser::Variable_definition_with_instructionContext *ctx)
 {
     std::string varName = ctx->IDENTIFIER()->getText();
-    cfg->addVariable(varName, Type::INT32);
+    Type type = symbolTable.at(varName).type;
+    cfg->addVariable(varName, type);
 
     std::string srcVar = asString(visit(ctx->instruction()));
     Block *block = cfg->getCurrentBlock();
-    block->addInstruction(new Copy(block, Type::INT32, varName, srcVar));
+    block->addInstruction(new Copy(block, type, varName, srcVar));
     return 0;
 }
 
@@ -58,7 +61,7 @@ antlrcpp::Any IRGeneratorVisitor::visitInstruction(ifccParser::InstructionContex
     for (auto &id : ctx->IDENTIFIER())
     {
         std::string varName = id->getText();
-        block->addInstruction(new Copy(block, Type::INT32, varName, srcVar));
+        block->addInstruction(new Copy(block, symbolTable.at(varName).type, varName, srcVar));
     }
 
     return srcVar;
@@ -69,7 +72,7 @@ antlrcpp::Any IRGeneratorVisitor::visitReturn_statement(ifccParser::Return_state
     std::string srcVar = asString(visit(ctx->expression()));
 
     Block *block = cfg->getCurrentBlock();
-    block->addInstruction(new Copy(block, Type::INT32, "$return", srcVar));
+    block->addInstruction(new Copy(block, cfg->getVar("$return").type, "$return", srcVar));
     return 0;
 }
 
@@ -85,11 +88,12 @@ antlrcpp::Any IRGeneratorVisitor::visitConstant_expression(ifccParser::Constant_
 
 antlrcpp::Any IRGeneratorVisitor::visitCharacter_expression(ifccParser::Character_expressionContext *ctx)
 {
-    int value = ctx->CHARACTER()->getText()[1]; // Assuming the character is in the format 'a'
-    std::string tmp = cfg->addTempVariable(Type::INT32);
+    // Le texte du token CHARACTER est "'A'" : le caractère utile est à l'indice 1.
+    int value = ctx->CHARACTER()->getText()[1];
+    std::string tmp = cfg->addTempVariable(Type::CHAR);
 
     Block *block = cfg->getCurrentBlock();
-    block->addInstruction(new LoadConstant(block, Type::INT32, tmp, value));
+    block->addInstruction(new LoadConstant(block, Type::CHAR, tmp, value));
     return tmp;
 }
 
@@ -101,17 +105,18 @@ antlrcpp::Any IRGeneratorVisitor::visitVariable_expression(ifccParser::Variable_
 antlrcpp::Any IRGeneratorVisitor::visitUnary_operation(ifccParser::Unary_operationContext *ctx)
 {
     std::string srcVar = asString(visit(ctx->expression()));
-    std::string tmp = cfg->addTempVariable(Type::INT32);
+    Type type = promote(cfg->getVar(srcVar).type, cfg->getVar(srcVar).type);
+    std::string tmp = cfg->addTempVariable(type);
 
     Block *block = cfg->getCurrentBlock();
     if (ctx->op->getType() == ifccParser::MINUS)
     {
-        block->addInstruction(new Negate(block, Type::INT32, tmp, srcVar));
+        block->addInstruction(new Negate(block, type, tmp, srcVar));
     }
     else if (ctx->op->getType() == ifccParser::NOT)
     {
         // !x  ≡  (x == 0) : à implémenter quand les instructions de comparaison seront ajoutées
-        block->addInstruction(new LoadConstant(block, Type::INT32, tmp, 0));
+        block->addInstruction(new LoadConstant(block, type, tmp, 0));
     }
 
     return tmp;
@@ -126,16 +131,17 @@ antlrcpp::Any IRGeneratorVisitor::visitAdditive_expression(ifccParser::Additive_
 {
     std::string left = asString(visit(ctx->expression(0)));
     std::string right = asString(visit(ctx->expression(1)));
-    std::string tmp = cfg->addTempVariable(Type::INT32);
+    Type type = promote(cfg->getVar(left).type, cfg->getVar(right).type);
+    std::string tmp = cfg->addTempVariable(type);
 
     Block *block = cfg->getCurrentBlock();
     if (ctx->op->getType() == ifccParser::PLUS)
     {
-        block->addInstruction(new Add(block, Type::INT32, tmp, left, right));
+        block->addInstruction(new Add(block, type, tmp, left, right));
     }
     else
     {
-        block->addInstruction(new Subtract(block, Type::INT32, tmp, left, right));
+        block->addInstruction(new Subtract(block, type, tmp, left, right));
     }
 
     return tmp;
@@ -145,20 +151,21 @@ antlrcpp::Any IRGeneratorVisitor::visitMultiplicative_expression(ifccParser::Mul
 {
     std::string left = asString(visit(ctx->expression(0)));
     std::string right = asString(visit(ctx->expression(1)));
-    std::string tmp = cfg->addTempVariable(Type::INT32);
+    Type type = promote(cfg->getVar(left).type, cfg->getVar(right).type);
+    std::string tmp = cfg->addTempVariable(type);
 
     Block *block = cfg->getCurrentBlock();
     if (ctx->op->getType() == ifccParser::TIMES)
     {
-        block->addInstruction(new Multiply(block, Type::INT32, tmp, left, right));
+        block->addInstruction(new Multiply(block, type, tmp, left, right));
     }
     else if (ctx->op->getType() == ifccParser::DIVIDE)
     {
-        block->addInstruction(new Divide(block, Type::INT32, tmp, left, right));
+        block->addInstruction(new Divide(block, type, tmp, left, right));
     }
     else
     {
-        block->addInstruction(new Modulo(block, Type::INT32, tmp, left, right));
+        block->addInstruction(new Modulo(block, type, tmp, left, right));
     }
 
     return tmp;

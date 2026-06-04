@@ -61,6 +61,7 @@ TYPE
     : 'int'
     | 'double'
     | 'void'
+    | 'char'
     ;
 
 // Keywords
