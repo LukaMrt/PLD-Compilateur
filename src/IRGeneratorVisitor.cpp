@@ -83,6 +83,16 @@ antlrcpp::Any IRGeneratorVisitor::visitConstant_expression(ifccParser::Constant_
     return tmp;
 }
 
+antlrcpp::Any IRGeneratorVisitor::visitCharacter_expression(ifccParser::Character_expressionContext *ctx)
+{
+    int value = ctx->CHARACTER()->getText()[1]; // Assuming the character is in the format 'a'
+    std::string tmp = cfg->addTempVariable(Type::INT32);
+
+    Block *block = cfg->getCurrentBlock();
+    block->addInstruction(new LoadConstant(block, Type::INT32, tmp, value));
+    return tmp;
+}
+
 antlrcpp::Any IRGeneratorVisitor::visitVariable_expression(ifccParser::Variable_expressionContext *ctx)
 {
     return ctx->IDENTIFIER()->getText();
