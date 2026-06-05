@@ -41,6 +41,7 @@ std::string IRGeneratorVisitor::emitConstant(Type type, int value)
 antlrcpp::Any IRGeneratorVisitor::visitFunction(ifccParser::FunctionContext *ctx)
 {
     std::string funcName = ctx->IDENTIFIER()->getText();
+    symbolTable = allSymbolTables.at(funcName);
     Type returnType = stringToType(ctx->TYPE()->getText());
     functionReturnTypes[funcName] = returnType;
     cfgs[funcName] = new ControlFlowGraph(funcName);
@@ -53,6 +54,15 @@ antlrcpp::Any IRGeneratorVisitor::visitFunction(ifccParser::FunctionContext *ctx
 
     visitChildren(ctx);
 
+    return 0;
+}
+
+antlrcpp::Any IRGeneratorVisitor::visitFunction_parameter_declaration(ifccParser::Function_parameter_declarationContext *ctx)
+{
+    std::string varName = ctx->IDENTIFIER()->getText();
+    Type type = symbolTable.at(varName).type;
+    currentCFG->addParameter(varName, type);
+    currentCFG->addVariable(varName, type);
     return 0;
 }
 
@@ -124,14 +134,17 @@ antlrcpp::Any IRGeneratorVisitor::visitFunction_call(ifccParser::Function_callCo
 {
     std::string funcName = ctx->IDENTIFIER()->getText();
 
-    // Les paramètres ne sont pas encore gérés : on émet seulement l'appel et on
-    // récupère la valeur de retour (placée dans %eax) dans une temporaire.
-    // Repli sur INT32 si la fonction n'a pas encore été vue (appel en avant).
+    std::vector<std::string> args;
+    for (auto expression : ctx->expression())
+    {
+        args.push_back(asString(visit(expression)));
+    }
+
     auto it = functionReturnTypes.find(funcName);
     Type type = it != functionReturnTypes.end() ? it->second : Type::INT32;
     std::string tmp = currentCFG->addTempVariable(type);
     Block *block = currentCFG->getCurrentBlock();
-    block->addInstruction(new CallFunction(block, type, tmp, funcName));
+    block->addInstruction(new CallFunction(block, type, tmp, funcName, args));
     return tmp;
 }
 

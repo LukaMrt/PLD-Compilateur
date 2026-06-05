@@ -69,7 +69,7 @@ int main(int argn, const char **argv)
     SymbolTableVisitor symbolTableVisitor;
     symbolTableVisitor.visit(tree);
 
-    IRGeneratorVisitor irVisitor(symbolTableVisitor.getSymbolTable());
+    IRGeneratorVisitor irVisitor(symbolTableVisitor.getAllSymbolTables());
     irVisitor.visit(tree);
 
     if (debugIR)

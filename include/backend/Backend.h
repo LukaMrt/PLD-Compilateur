@@ -29,6 +29,7 @@ public:
     virtual void emitEpilogue(ControlFlowGraph *cfg, std::ostream &output) = 0;
 
     virtual std::string varToLocation(std::string name, ControlFlowGraph *cfg) = 0;
+    virtual std::string parameterToLocation(int index) = 0;
 
     virtual void emit(Add *instr, std::ostream &output) = 0;
     virtual void emit(Subtract *instr, std::ostream &output) = 0;

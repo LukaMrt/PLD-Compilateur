@@ -11,12 +11,13 @@
 class IRGeneratorVisitor : public ifccBaseVisitor
 {
 public:
-    IRGeneratorVisitor(const std::map<std::string, SymbolTableVisitor::VariableInfo> &symbolTable)
-        : symbolTable(symbolTable), currentCFG(nullptr) {}
+    IRGeneratorVisitor(const std::map<std::string, std::map<std::string, SymbolTableVisitor::VariableInfo>> &allSymbolTables)
+        : allSymbolTables(allSymbolTables), currentCFG(nullptr) {}
 
     ControlFlowGraph *getCurrentCFG() const { return currentCFG; }
 
     virtual antlrcpp::Any visitFunction(ifccParser::FunctionContext *ctx) override;
+    virtual antlrcpp::Any visitFunction_parameter_declaration(ifccParser::Function_parameter_declarationContext *ctx) override;
     virtual antlrcpp::Any visitReturn_statement(ifccParser::Return_statementContext *ctx) override;
     virtual antlrcpp::Any visitVariable_definition_with_instruction(ifccParser::Variable_definition_with_instructionContext *ctx) override;
     virtual antlrcpp::Any visitVariable_definition_without_instruction(ifccParser::Variable_definition_without_instructionContext *ctx) override;
@@ -43,6 +44,7 @@ private:
     // Émet un LoadConstant dans un nouveau temp, l'enregistre comme constant et renvoie son nom.
     std::string emitConstant(Type type, int value);
 
+    std::map<std::string, std::map<std::string, SymbolTableVisitor::VariableInfo>> allSymbolTables;
     std::map<std::string, SymbolTableVisitor::VariableInfo> symbolTable;
     std::map<std::string, ControlFlowGraph *> cfgs;
     // Type de retour de chaque fonction, renseigné lors de la visite de sa définition.

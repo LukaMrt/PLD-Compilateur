@@ -21,6 +21,13 @@ void X86Backend::emitPrologue(ControlFlowGraph *cfg, std::ostream &output)
     output << "    pushq %rbp\n";
     output << "    movq %rsp, %rbp\n";
 
+    int paramIndex = 0;
+    for (auto parameter : cfg->getParameters())
+    {
+        output << "    movl " << parameterToLocation(paramIndex) << ", " << varToLocation(parameter.first, cfg) << "\n";
+        paramIndex++;
+    }
+
     // Réserve le cadre de pile pour les variables locales, aligné sur 16 octets
     // (exigence de l'ABI System V) afin que %rsp soit en dessous des locales :
     // sinon un `call` écraserait celles-ci en y empilant l'adresse de retour.
@@ -49,6 +56,20 @@ void X86Backend::emitJump(Block *block, std::ostream &output)
 std::string X86Backend::varToLocation(std::string name, ControlFlowGraph *cfg)
 {
     return std::to_string(-cfg->getVar(name).offset) + "(%rbp)";
+}
+
+std::string X86Backend::parameterToLocation(int index)
+{
+    static const std::vector<std::string> paramRegs = {"%edi", "%esi", "%edx", "%ecx", "%r8d", "%r9d"};
+    if (index < paramRegs.size())
+    {
+        return paramRegs[index];
+    }
+    else
+    {
+        std::cerr << "Error: parameter index " << index << " out of range for x86-64 calling convention." << std::endl;
+        exit(1);
+    }
 }
 
 void X86Backend::emit(LoadConstant *instr, std::ostream &output)
@@ -142,6 +163,11 @@ void X86Backend::emit(BitwiseXor *instr, std::ostream &output)
 void X86Backend::emit(CallFunction *instr, std::ostream &output)
 {
     ControlFlowGraph *cfg = instr->getBlock()->getControlFlowGraph();
+    auto args = instr->getArguments();
+    for (size_t i = 0; i < args.size(); i++)
+    {
+        output << "    movl " << varToLocation(args[i], cfg) << ", " << parameterToLocation(i) << "\n";
+    }
     output << "    call " << instr->getFunctionName() << "\n";
     output << "    movl %eax, " << varToLocation(instr->getDestination(), cfg) << "\n";
 }

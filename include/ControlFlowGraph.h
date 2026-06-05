@@ -24,6 +24,11 @@ public:
 	Variable getVar(std::string name);
 	std::string getOffset(std::string name);
 
+	// parameters map management
+	void addParameter(std::string name, Type type);
+	std::vector<std::pair<std::string, Variable>> getParameters();
+	std::string getParameterIndex(std::string name);
+
 	// blocks management
 	void addBlock(Block *block);
 	void setCurrentBlock(Block *block) { currentBlock = block; }
@@ -35,6 +40,7 @@ protected:
 	std::string label;
 	Block *currentBlock;
 	std::map<std::string, Variable> variableMap;
+	std::map<std::string, Variable> parametersMap;
 	std::vector<Block *> blocks;
 	int currentOffset = 0;
 };

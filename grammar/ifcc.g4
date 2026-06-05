@@ -5,11 +5,15 @@ axiom
     ;
 
 function
-    : TYPE IDENTIFIER BRACKET_OPEN function_variable_declaration? BRACKET_CLOSE block
+    : TYPE IDENTIFIER BRACKET_OPEN function_parameters_declaration? BRACKET_CLOSE block
     ;
 
-function_variable_declaration
-    : TYPE IDENTIFIER (COMMA TYPE IDENTIFIER )*
+function_parameters_declaration
+    : function_parameter_declaration (COMMA function_parameter_declaration)*
+    ;
+
+function_parameter_declaration
+    : TYPE IDENTIFIER (EQUAL instruction)?
     ;
 
 block

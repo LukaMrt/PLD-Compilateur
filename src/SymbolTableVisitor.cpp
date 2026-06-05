@@ -2,9 +2,12 @@
 
 antlrcpp::Any SymbolTableVisitor::visitFunction(ifccParser::FunctionContext *ctx)
 {
+    currentFunction = ctx->IDENTIFIER()->getText();
+    allSymbolTables[currentFunction] = {};
+
     this->visitChildren(ctx);
 
-    for (auto &entry : symbolTable)
+    for (auto &entry : currentTable())
     {
         if (!entry.second.used)
         {
@@ -15,15 +18,11 @@ antlrcpp::Any SymbolTableVisitor::visitFunction(ifccParser::FunctionContext *ctx
     return 0;
 }
 
-antlrcpp::Any SymbolTableVisitor::visitFunction_variable_declaration(ifccParser::Function_variable_declarationContext *ctx)
+antlrcpp::Any SymbolTableVisitor::visitFunction_parameter_declaration(ifccParser::Function_parameter_declarationContext *ctx)
 {
-    // Chaque paramètre porte son propre TYPE, apparié par index avec son IDENTIFIER.
-    for (size_t i = 0; i < ctx->IDENTIFIER().size(); ++i)
-    {
-        std::string varName = ctx->IDENTIFIER(i)->getText();
-        Type type = stringToType(ctx->TYPE(i)->getText());
-        this->declareVariable(varName, type);
-    }
+    std::string varName = ctx->IDENTIFIER()->getText();
+    Type type = stringToType(ctx->TYPE()->getText());
+    this->declareVariable(varName, type);
     return 0;
 }
 

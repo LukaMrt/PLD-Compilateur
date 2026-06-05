@@ -38,6 +38,27 @@ std::string ControlFlowGraph::getOffset(std::string name)
     return std::to_string(getVar(name).offset);
 }
 
+void ControlFlowGraph::addParameter(std::string name, Type type)
+{
+    int index = parametersMap.size();
+    parametersMap[name] = {type, index};
+}
+
+std::vector<std::pair<std::string, Variable>> ControlFlowGraph::getParameters()
+{
+    return std::vector<std::pair<std::string, Variable>>(parametersMap.begin(), parametersMap.end());
+}
+
+std::string ControlFlowGraph::getParameterIndex(std::string name)
+{
+    if (parametersMap.find(name) == parametersMap.end())
+    {
+        std::cerr << "Error: parameter '" << name << "' not found." << std::endl;
+        exit(1);
+    }
+    return std::to_string(parametersMap[name].offset);
+}
+
 void ControlFlowGraph::addBlock(Block *block)
 {
     blocks.push_back(block);
@@ -47,6 +68,11 @@ void ControlFlowGraph::addBlock(Block *block)
 void ControlFlowGraph::debug(std::ostream &output) const
 {
     output << "=== CFG: " << label << " ===\n";
+    output << "Parameters:\n";
+    for (const auto &[name, var] : parametersMap)
+    {
+        output << "  [" << var.offset << "] " << name << "\n";
+    }
     output << "Variables:\n";
     for (const auto &[name, var] : variableMap)
     {
