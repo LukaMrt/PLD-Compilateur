@@ -12,9 +12,9 @@ class IRGeneratorVisitor : public ifccBaseVisitor
 {
 public:
     IRGeneratorVisitor(const std::map<std::string, SymbolTableVisitor::VariableInfo> &symbolTable)
-        : symbolTable(symbolTable), cfg(nullptr) {}
+        : symbolTable(symbolTable), currentCFG(nullptr) {}
 
-    ControlFlowGraph *getCFG() const { return cfg; }
+    ControlFlowGraph *getCurrentCFG() const { return currentCFG; }
 
     virtual antlrcpp::Any visitFunction(ifccParser::FunctionContext *ctx) override;
     virtual antlrcpp::Any visitReturn_statement(ifccParser::Return_statementContext *ctx) override;
@@ -24,6 +24,7 @@ public:
     virtual antlrcpp::Any visitConstant_expression(ifccParser::Constant_expressionContext *ctx) override;
     virtual antlrcpp::Any visitCharacter_expression(ifccParser::Character_expressionContext *ctx) override;
     virtual antlrcpp::Any visitVariable_expression(ifccParser::Variable_expressionContext *ctx) override;
+    virtual antlrcpp::Any visitFunction_call(ifccParser::Function_callContext *ctx) override;
     virtual antlrcpp::Any visitUnary_operation(ifccParser::Unary_operationContext *ctx) override;
     virtual antlrcpp::Any visitBracketed_expression(ifccParser::Bracketed_expressionContext *ctx) override;
     virtual antlrcpp::Any visitAdditive_expression(ifccParser::Additive_expressionContext *ctx) override;
@@ -43,5 +44,11 @@ private:
     std::string emitConstant(Type type, int value);
 
     std::map<std::string, SymbolTableVisitor::VariableInfo> symbolTable;
-    ControlFlowGraph *cfg;
+    std::map<std::string, ControlFlowGraph *> cfgs;
+    // Type de retour de chaque fonction, renseigné lors de la visite de sa définition.
+    std::map<std::string, Type> functionReturnTypes;
+    ControlFlowGraph *currentCFG;
+
+public:
+    const std::map<std::string, ControlFlowGraph *> &getCFGs() const { return cfgs; }
 };

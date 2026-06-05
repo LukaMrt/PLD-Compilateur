@@ -20,27 +20,17 @@ all: ifcc
 
 ##########################################
 # link together all pieces of our compiler
-OBJECTS=build/ifccBaseVisitor.o \
+# Objets générés par ANTLR (vivent dans generated/, liste explicite)
+GENERATED_OBJECTS=build/ifccBaseVisitor.o \
 	build/ifccLexer.o \
 	build/ifccVisitor.o \
-	build/ifccParser.o \
-	build/main.o \
-	build/SymbolTableVisitor.o \
-	build/IRGeneratorVisitor.o \
-	build/Block.o \
-	build/ControlFlowGraph.o \
-	build/backend/X86Backend.o \
-	build/instructions/Add.o \
-	build/instructions/Subtract.o \
-	build/instructions/Multiply.o \
-	build/instructions/Divide.o \
-	build/instructions/Modulo.o \
-	build/instructions/Copy.o \
-	build/instructions/LoadConstant.o \
-	build/instructions/Negate.o \
-	build/instructions/BitwiseAnd.o \
-	build/instructions/BitwiseOr.o \
-	build/instructions/BitwiseXor.o
+	build/ifccParser.o
+
+# Objets de notre code C++ : découverts automatiquement depuis src/.
+# Ajouter un nouveau .cpp sous src/ suffit, pas besoin de toucher au Makefile.
+SRC_OBJECTS=$(patsubst src/%.cpp,build/%.o,$(shell find src -name '*.cpp'))
+
+OBJECTS=$(GENERATED_OBJECTS) $(SRC_OBJECTS)
 
 ifcc: $(OBJECTS)
 	@mkdir -p build

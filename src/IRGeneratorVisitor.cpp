@@ -11,6 +11,7 @@
 #include "instructions/BitwiseAnd.h"
 #include "instructions/BitwiseOr.h"
 #include "instructions/BitwiseXor.h"
+#include "instructions/CallFunction.h"
 
 static std::string asString(antlrcpp::Any any)
 {
@@ -30,8 +31,8 @@ bool IRGeneratorVisitor::isConstant(const std::string &v, int &out) const
 
 std::string IRGeneratorVisitor::emitConstant(Type type, int value)
 {
-    std::string tmp = cfg->addTempVariable(type);
-    Block *block = cfg->getCurrentBlock();
+    std::string tmp = currentCFG->addTempVariable(type);
+    Block *block = currentCFG->getCurrentBlock();
     block->addInstruction(new LoadConstant(block, type, tmp, value));
     knownConstants[tmp] = value;
     return tmp;
@@ -41,11 +42,13 @@ antlrcpp::Any IRGeneratorVisitor::visitFunction(ifccParser::FunctionContext *ctx
 {
     std::string funcName = ctx->IDENTIFIER()->getText();
     Type returnType = stringToType(ctx->TYPE()->getText());
-    cfg = new ControlFlowGraph(funcName);
-    cfg->addVariable("$return", returnType);
+    functionReturnTypes[funcName] = returnType;
+    cfgs[funcName] = new ControlFlowGraph(funcName);
+    currentCFG = cfgs[funcName];
+    currentCFG->addVariable("$return", returnType);
 
-    Block *block = new Block(cfg, funcName + "_entry");
-    cfg->addBlock(block);
+    Block *block = new Block(currentCFG, funcName + "_entry");
+    currentCFG->addBlock(block);
     block->addInstruction(new LoadConstant(block, returnType, "$return", 0));
 
     visitChildren(ctx);
@@ -57,9 +60,9 @@ antlrcpp::Any IRGeneratorVisitor::visitVariable_definition_without_instruction(i
 {
     std::string varName = ctx->IDENTIFIER()->getText();
     Type type = symbolTable.at(varName).type;
-    cfg->addVariable(varName, type);
+    currentCFG->addVariable(varName, type);
 
-    Block *block = cfg->getCurrentBlock();
+    Block *block = currentCFG->getCurrentBlock();
     block->addInstruction(new LoadConstant(block, type, varName, 0));
     return 0;
 }
@@ -68,10 +71,10 @@ antlrcpp::Any IRGeneratorVisitor::visitVariable_definition_with_instruction(ifcc
 {
     std::string varName = ctx->IDENTIFIER()->getText();
     Type type = symbolTable.at(varName).type;
-    cfg->addVariable(varName, type);
+    currentCFG->addVariable(varName, type);
 
     std::string srcVar = asString(visit(ctx->instruction()));
-    Block *block = cfg->getCurrentBlock();
+    Block *block = currentCFG->getCurrentBlock();
     block->addInstruction(new Copy(block, type, varName, srcVar));
     return 0;
 }
@@ -80,7 +83,7 @@ antlrcpp::Any IRGeneratorVisitor::visitInstruction(ifccParser::InstructionContex
 {
     std::string srcVar = asString(visit(ctx->expression()));
 
-    Block *block = cfg->getCurrentBlock();
+    Block *block = currentCFG->getCurrentBlock();
     for (auto &id : ctx->IDENTIFIER())
     {
         std::string varName = id->getText();
@@ -94,8 +97,8 @@ antlrcpp::Any IRGeneratorVisitor::visitReturn_statement(ifccParser::Return_state
 {
     std::string srcVar = asString(visit(ctx->expression()));
 
-    Block *block = cfg->getCurrentBlock();
-    block->addInstruction(new Copy(block, cfg->getVar("$return").type, "$return", srcVar));
+    Block *block = currentCFG->getCurrentBlock();
+    block->addInstruction(new Copy(block, currentCFG->getVar("$return").type, "$return", srcVar));
     return 0;
 }
 
@@ -117,10 +120,25 @@ antlrcpp::Any IRGeneratorVisitor::visitVariable_expression(ifccParser::Variable_
     return ctx->IDENTIFIER()->getText();
 }
 
+antlrcpp::Any IRGeneratorVisitor::visitFunction_call(ifccParser::Function_callContext *ctx)
+{
+    std::string funcName = ctx->IDENTIFIER()->getText();
+
+    // Les paramètres ne sont pas encore gérés : on émet seulement l'appel et on
+    // récupère la valeur de retour (placée dans %eax) dans une temporaire.
+    // Repli sur INT32 si la fonction n'a pas encore été vue (appel en avant).
+    auto it = functionReturnTypes.find(funcName);
+    Type type = it != functionReturnTypes.end() ? it->second : Type::INT32;
+    std::string tmp = currentCFG->addTempVariable(type);
+    Block *block = currentCFG->getCurrentBlock();
+    block->addInstruction(new CallFunction(block, type, tmp, funcName));
+    return tmp;
+}
+
 antlrcpp::Any IRGeneratorVisitor::visitUnary_operation(ifccParser::Unary_operationContext *ctx)
 {
     std::string srcVar = asString(visit(ctx->expression()));
-    Type type = promote(cfg->getVar(srcVar).type, cfg->getVar(srcVar).type);
+    Type type = promote(currentCFG->getVar(srcVar).type, currentCFG->getVar(srcVar).type);
 
     int srcValue;
     if (ctx->op->getType() == ifccParser::MINUS && isConstant(srcVar, srcValue))
@@ -128,8 +146,8 @@ antlrcpp::Any IRGeneratorVisitor::visitUnary_operation(ifccParser::Unary_operati
         return emitConstant(type, -srcValue);
     }
 
-    std::string tmp = cfg->addTempVariable(type);
-    Block *block = cfg->getCurrentBlock();
+    std::string tmp = currentCFG->addTempVariable(type);
+    Block *block = currentCFG->getCurrentBlock();
     if (ctx->op->getType() == ifccParser::MINUS)
     {
         block->addInstruction(new Negate(block, type, tmp, srcVar));
@@ -152,7 +170,7 @@ antlrcpp::Any IRGeneratorVisitor::visitAdditive_expression(ifccParser::Additive_
 {
     std::string left = asString(visit(ctx->expression(0)));
     std::string right = asString(visit(ctx->expression(1)));
-    Type type = promote(cfg->getVar(left).type, cfg->getVar(right).type);
+    Type type = promote(currentCFG->getVar(left).type, currentCFG->getVar(right).type);
     bool isAddition = ctx->op->getType() == ifccParser::PLUS;
 
     int leftValue, rightValue;
@@ -173,8 +191,8 @@ antlrcpp::Any IRGeneratorVisitor::visitAdditive_expression(ifccParser::Additive_
         return right;
     }
 
-    std::string tmp = cfg->addTempVariable(type);
-    Block *block = cfg->getCurrentBlock();
+    std::string tmp = currentCFG->addTempVariable(type);
+    Block *block = currentCFG->getCurrentBlock();
     if (isAddition)
     {
         block->addInstruction(new Add(block, type, tmp, left, right));
@@ -191,7 +209,7 @@ antlrcpp::Any IRGeneratorVisitor::visitMultiplicative_expression(ifccParser::Mul
 {
     std::string left = asString(visit(ctx->expression(0)));
     std::string right = asString(visit(ctx->expression(1)));
-    Type type = promote(cfg->getVar(left).type, cfg->getVar(right).type);
+    Type type = promote(currentCFG->getVar(left).type, currentCFG->getVar(right).type);
     size_t op = ctx->op->getType();
 
     int leftValue, rightValue;
@@ -231,8 +249,8 @@ antlrcpp::Any IRGeneratorVisitor::visitMultiplicative_expression(ifccParser::Mul
         return left;
     }
 
-    std::string tmp = cfg->addTempVariable(type);
-    Block *block = cfg->getCurrentBlock();
+    std::string tmp = currentCFG->addTempVariable(type);
+    Block *block = currentCFG->getCurrentBlock();
     if (op == ifccParser::TIMES)
     {
         block->addInstruction(new Multiply(block, type, tmp, left, right));
@@ -253,7 +271,7 @@ antlrcpp::Any IRGeneratorVisitor::visitBitwise_and_expression(ifccParser::Bitwis
 {
     std::string left = asString(visit(ctx->expression(0)));
     std::string right = asString(visit(ctx->expression(1)));
-    Type type = promote(cfg->getVar(left).type, cfg->getVar(right).type);
+    Type type = promote(currentCFG->getVar(left).type, currentCFG->getVar(right).type);
 
     int leftValue, rightValue;
     bool leftIsConstant = isConstant(left, leftValue);
@@ -269,8 +287,8 @@ antlrcpp::Any IRGeneratorVisitor::visitBitwise_and_expression(ifccParser::Bitwis
         return emitConstant(type, 0);
     }
 
-    std::string tmp = cfg->addTempVariable(type);
-    Block *block = cfg->getCurrentBlock();
+    std::string tmp = currentCFG->addTempVariable(type);
+    Block *block = currentCFG->getCurrentBlock();
     block->addInstruction(new BitwiseAnd(block, type, tmp, left, right));
     return tmp;
 }
@@ -279,7 +297,7 @@ antlrcpp::Any IRGeneratorVisitor::visitBitwise_or_expression(ifccParser::Bitwise
 {
     std::string left = asString(visit(ctx->expression(0)));
     std::string right = asString(visit(ctx->expression(1)));
-    Type type = promote(cfg->getVar(left).type, cfg->getVar(right).type);
+    Type type = promote(currentCFG->getVar(left).type, currentCFG->getVar(right).type);
 
     int leftValue, rightValue;
     bool leftIsConstant = isConstant(left, leftValue);
@@ -299,8 +317,8 @@ antlrcpp::Any IRGeneratorVisitor::visitBitwise_or_expression(ifccParser::Bitwise
         return right;
     }
 
-    std::string tmp = cfg->addTempVariable(type);
-    Block *block = cfg->getCurrentBlock();
+    std::string tmp = currentCFG->addTempVariable(type);
+    Block *block = currentCFG->getCurrentBlock();
     block->addInstruction(new BitwiseOr(block, type, tmp, left, right));
     return tmp;
 }
@@ -309,7 +327,7 @@ antlrcpp::Any IRGeneratorVisitor::visitBitwise_xor_expression(ifccParser::Bitwis
 {
     std::string left = asString(visit(ctx->expression(0)));
     std::string right = asString(visit(ctx->expression(1)));
-    Type type = promote(cfg->getVar(left).type, cfg->getVar(right).type);
+    Type type = promote(currentCFG->getVar(left).type, currentCFG->getVar(right).type);
 
     int leftValue, rightValue;
     bool leftIsConstant = isConstant(left, leftValue);
@@ -329,8 +347,8 @@ antlrcpp::Any IRGeneratorVisitor::visitBitwise_xor_expression(ifccParser::Bitwis
         return right;
     }
 
-    std::string tmp = cfg->addTempVariable(type);
-    Block *block = cfg->getCurrentBlock();
+    std::string tmp = currentCFG->addTempVariable(type);
+    Block *block = currentCFG->getCurrentBlock();
     block->addInstruction(new BitwiseXor(block, type, tmp, left, right));
     return tmp;
 }
