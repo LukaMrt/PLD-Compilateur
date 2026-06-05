@@ -33,12 +33,15 @@ public:
 	void addBlock(Block *block);
 	void setCurrentBlock(Block *block) { currentBlock = block; }
 	Block *getCurrentBlock() { return currentBlock; }
+	Block *getExitBlock() { return exitBlock; }
+	void setExitBlock(Block *block) { exitBlock = block; }
 	std::string getLabel() { return label; }
 	int getCurrentOffset() { return currentOffset; }
 
 protected:
 	std::string label;
 	Block *currentBlock;
+	Block *exitBlock;
 	std::map<std::string, Variable> variableMap;
 	std::map<std::string, Variable> parametersMap;
 	std::vector<Block *> blocks;

@@ -48,6 +48,11 @@ antlrcpp::Any IRGeneratorVisitor::visitFunction(ifccParser::FunctionContext *ctx
     currentCFG = cfgs[funcName];
     currentCFG->addVariable("$return", returnType);
 
+    // Le bloc de sortie est créé ici mais n'est pas ajouté à la liste des blocs ;
+    // il est émis séparément par generateASM juste avant l'épilogue.
+    Block *exitBlock = new Block(currentCFG, funcName + "_exit");
+    currentCFG->setExitBlock(exitBlock);
+
     Block *block = new Block(currentCFG, funcName + "_entry");
     currentCFG->addBlock(block);
     block->addInstruction(new LoadConstant(block, returnType, "$return", 0));
@@ -109,6 +114,12 @@ antlrcpp::Any IRGeneratorVisitor::visitReturn_statement(ifccParser::Return_state
 
     Block *block = currentCFG->getCurrentBlock();
     block->addInstruction(new Copy(block, currentCFG->getVar("$return").type, "$return", srcVar));
+    block->setTrueCaseBlock(currentCFG->getExitBlock());
+
+    std::string deadLabel = currentCFG->getLabel() + "_dead" + std::to_string(deadBlockCount++);
+    Block *deadBlock = new Block(currentCFG, deadLabel);
+    currentCFG->addBlock(deadBlock);
+
     return 0;
 }
 

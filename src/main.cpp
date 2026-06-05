@@ -72,6 +72,9 @@ int main(int argn, const char **argv)
     IRGeneratorVisitor irVisitor(symbolTableVisitor.getAllSymbolTables());
     irVisitor.visit(tree);
 
+    if (irVisitor.getDeadBlockCount() > 0)
+        std::cerr << "warning: " << irVisitor.getDeadBlockCount() << " unreachable code block(s) detected\n";
+
     if (debugIR)
         for (const auto &[name, cfg] : irVisitor.getCFGs())
             cfg->debug(std::cerr);

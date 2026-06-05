@@ -50,7 +50,9 @@ private:
     // Type de retour de chaque fonction, renseigné lors de la visite de sa définition.
     std::map<std::string, Type> functionReturnTypes;
     ControlFlowGraph *currentCFG;
+    int deadBlockCount = 0;
 
 public:
     const std::map<std::string, ControlFlowGraph *> &getCFGs() const { return cfgs; }
+    int getDeadBlockCount() const { return deadBlockCount; }
 };

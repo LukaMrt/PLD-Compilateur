@@ -21,6 +21,8 @@ public:
 	std::string getLabel() { return label; }
 	Block *getTrueCaseBlock() { return true_case_block; }
 	Block *getFalseCaseBlock() { return false_case_block; }
+	void setTrueCaseBlock(Block *block) { true_case_block = block; }
+	void setFalseCaseBlock(Block *block) { false_case_block = block; }
 
 	ControlFlowGraph *getControlFlowGraph() { return controlFlowGraph; }
 	std::vector<Instruction *> getInstructions() { return instructions; }

@@ -1,7 +1,7 @@
 #include "ControlFlowGraph.h"
 
 ControlFlowGraph::ControlFlowGraph(std::string label)
-    : label(label), currentBlock(nullptr), currentOffset(0)
+    : label(label), currentBlock(nullptr), exitBlock(nullptr), currentOffset(0)
 {
 }
 
@@ -92,6 +92,12 @@ void ControlFlowGraph::generateASM(Backend &backend, std::ostream &output)
     for (Block *block : blocks)
     {
         block->generateASM(backend, output);
+    }
+    // L'exit block n'a pas d'instructions : on émet juste son label
+    // pour que les sauts `jmp funcName_exit` puissent y atterrir.
+    if (exitBlock != nullptr)
+    {
+        backend.emitBlockLabel(exitBlock, output);
     }
     backend.emitEpilogue(this, output);
 }
