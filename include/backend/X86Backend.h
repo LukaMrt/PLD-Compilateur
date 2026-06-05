@@ -27,4 +27,6 @@ public:
     void emit(CallFunction *instr, std::ostream &output) override;
     void emit(Equal *instr, std::ostream &output) override;
     void emit(NotEqual *instr, std::ostream &output) override;
+    void emit(Lesser *instr, std::ostream &output) override;
+    void emit(Greater *instr, std::ostream &output) override;
 };

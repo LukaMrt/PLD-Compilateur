@@ -19,6 +19,8 @@ class BitwiseXor;
 class CallFunction;
 class Equal;
 class NotEqual;
+class Lesser;
+class Greater;
 
 class Backend
 {
@@ -47,4 +49,6 @@ public:
     virtual void emit(CallFunction *instr, std::ostream &output) = 0;
     virtual void emit(Equal *instr, std::ostream &output) = 0;
     virtual void emit(NotEqual *instr, std::ostream &output) = 0;
+    virtual void emit(Lesser *instr, std::ostream &output) = 0;
+    virtual void emit(Greater *instr, std::ostream &output) = 0;
 };

@@ -14,6 +14,8 @@
 #include "instructions/CallFunction.h"
 #include "instructions/Equal.h"
 #include "instructions/NotEqual.h"
+#include "instructions/Lesser.h"
+#include "instructions/Greater.h"
 
 static std::string asString(antlrcpp::Any any)
 {
@@ -411,6 +413,43 @@ antlrcpp::Any IRGeneratorVisitor::visitEqual_expression(ifccParser::Equal_expres
         tmp = cfg->addTempVariable(type);
         Block *block = cfg->getCurrentBlock();
         block->addInstruction(new NotEqual(block, type, tmp, left, right));
+    }
+
+    return tmp;
+}
+
+antlrcpp::Any IRGeneratorVisitor::visitComparison_expression(ifccParser::Comparison_expressionContext *ctx)
+{
+    std::string left = asString(visit(ctx->expression(0)));
+    std::string right = asString(visit(ctx->expression(1)));
+    Type type = Type::INT32;
+
+    int leftValue, rightValue;
+    bool leftIsConstant = isConstant(left, leftValue);
+    bool rightIsConstant = isConstant(right, rightValue);
+
+    std::string tmp;
+    size_t op = ctx->op->getType();
+
+    if (op == ifccParser::LESSER)
+    {
+        if (leftIsConstant && rightIsConstant)
+        {
+            return emitConstant(type, leftValue < rightValue);
+        }
+        tmp = cfg->addTempVariable(type);
+        Block *block = cfg->getCurrentBlock();
+        block->addInstruction(new Lesser(block, type, tmp, left, right));
+    }
+    else if (op == ifccParser::GREATER)
+    {
+        if (leftIsConstant && rightIsConstant)
+        {
+            return emitConstant(type, leftValue > rightValue);
+        }
+        tmp = cfg->addTempVariable(type);
+        Block *block = cfg->getCurrentBlock();
+        block->addInstruction(new Greater(block, type, tmp, left, right));
     }
 
     return tmp;

@@ -34,6 +34,7 @@ public:
     virtual antlrcpp::Any visitBitwise_or_expression(ifccParser::Bitwise_or_expressionContext *ctx) override;
     virtual antlrcpp::Any visitBitwise_xor_expression(ifccParser::Bitwise_xor_expressionContext *ctx) override;
     virtual antlrcpp::Any visitEqual_expression(ifccParser::Equal_expressionContext *ctx) override;
+    virtual antlrcpp::Any visitComparison_expression(ifccParser::Comparison_expressionContext *ctx) override;
 
 private:
     // Optimisation par pliage de constantes : associe un nom de variable temporaire
