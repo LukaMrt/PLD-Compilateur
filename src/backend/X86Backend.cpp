@@ -14,6 +14,7 @@
 #include "instructions/BitwiseXor.h"
 #include "instructions/CallFunction.h"
 #include "instructions/Equal.h"
+#include "instructions/NotEqual.h"
 
 void X86Backend::emitPrologue(ControlFlowGraph *cfg, std::ostream &output)
 {
@@ -177,5 +178,17 @@ void X86Backend::emit(Equal *instr, std::ostream &output)
     ControlFlowGraph *cfg = instr->getBlock()->getControlFlowGraph();
     output << "    movl " << varToLocation(instr->getLeft(), cfg) << ", %eax\n";
     output << "    cmpl " << varToLocation(instr->getRight(), cfg) << ", %eax\n";
+    output << "    sete %al\n";
+    output << "    movzbl %al, %eax\n";
+    output << "    movl %eax, " << varToLocation(instr->getDestination(), cfg) << "\n";
+}
+
+void X86Backend::emit(NotEqual *instr, std::ostream &output)
+{
+    ControlFlowGraph *cfg = instr->getBlock()->getControlFlowGraph();
+    output << "    movl " << varToLocation(instr->getLeft(), cfg) << ", %eax\n";
+    output << "    cmpl " << varToLocation(instr->getRight(), cfg) << ", %eax\n";
+    output << "    setne %al\n";
+    output << "    movzbl %al, %eax\n";
     output << "    movl %eax, " << varToLocation(instr->getDestination(), cfg) << "\n";
 }

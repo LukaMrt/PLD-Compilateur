@@ -13,6 +13,7 @@
 #include "instructions/BitwiseXor.h"
 #include "instructions/CallFunction.h"
 #include "instructions/Equal.h"
+#include "instructions/NotEqual.h"
 
 static std::string asString(antlrcpp::Any any)
 {
@@ -388,13 +389,29 @@ antlrcpp::Any IRGeneratorVisitor::visitEqual_expression(ifccParser::Equal_expres
     bool leftIsConstant = isConstant(left, leftValue);
     bool rightIsConstant = isConstant(right, rightValue);
 
-    if (leftIsConstant && rightIsConstant)
+    std::string tmp;
+    size_t op = ctx->op->getType();
+
+    if (op == ifccParser::COMPARE_EQUAL)
     {
-        return emitConstant(type, leftValue == rightValue);
+        if (leftIsConstant && rightIsConstant)
+        {
+            return emitConstant(type, leftValue == rightValue);
+        }
+        tmp = cfg->addTempVariable(type);
+        Block *block = cfg->getCurrentBlock();
+        block->addInstruction(new Equal(block, type, tmp, left, right));
+    }
+    else if (op == ifccParser::NOT_EQUAL)
+    {
+        if (leftIsConstant && rightIsConstant)
+        {
+            return emitConstant(type, leftValue != rightValue);
+        }
+        tmp = cfg->addTempVariable(type);
+        Block *block = cfg->getCurrentBlock();
+        block->addInstruction(new NotEqual(block, type, tmp, left, right));
     }
 
-    std::string tmp = cfg->addTempVariable(type);
-    Block *block = cfg->getCurrentBlock();
-    block->addInstruction(new Equal(block, type, tmp, left, right));
     return tmp;
 }

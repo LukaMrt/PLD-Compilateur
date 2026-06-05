@@ -26,4 +26,5 @@ public:
     void emit(BitwiseXor *instr, std::ostream &output) override;
     void emit(CallFunction *instr, std::ostream &output) override;
     void emit(Equal *instr, std::ostream &output) override;
+    void emit(NotEqual *instr, std::ostream &output) override;
 };
