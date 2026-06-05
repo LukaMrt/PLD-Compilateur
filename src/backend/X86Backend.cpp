@@ -13,6 +13,7 @@
 #include "instructions/BitwiseOr.h"
 #include "instructions/BitwiseXor.h"
 #include "instructions/CallFunction.h"
+#include "instructions/Equal.h"
 
 void X86Backend::emitPrologue(ControlFlowGraph *cfg, std::ostream &output)
 {
@@ -169,5 +170,12 @@ void X86Backend::emit(CallFunction *instr, std::ostream &output)
         output << "    movl " << varToLocation(args[i], cfg) << ", " << parameterToLocation(i) << "\n";
     }
     output << "    call " << instr->getFunctionName() << "\n";
+}
+
+void X86Backend::emit(Equal *instr, std::ostream &output)
+{
+    ControlFlowGraph *cfg = instr->getBlock()->getControlFlowGraph();
+    output << "    movl " << varToLocation(instr->getLeft(), cfg) << ", %eax\n";
+    output << "    cmpl " << varToLocation(instr->getRight(), cfg) << ", %eax\n";
     output << "    movl %eax, " << varToLocation(instr->getDestination(), cfg) << "\n";
 }

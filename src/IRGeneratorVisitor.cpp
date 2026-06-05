@@ -12,6 +12,7 @@
 #include "instructions/BitwiseOr.h"
 #include "instructions/BitwiseXor.h"
 #include "instructions/CallFunction.h"
+#include "instructions/Equal.h"
 
 static std::string asString(antlrcpp::Any any)
 {
@@ -374,5 +375,26 @@ antlrcpp::Any IRGeneratorVisitor::visitBitwise_xor_expression(ifccParser::Bitwis
     std::string tmp = currentCFG->addTempVariable(type);
     Block *block = currentCFG->getCurrentBlock();
     block->addInstruction(new BitwiseXor(block, type, tmp, left, right));
+    return tmp;
+}
+
+antlrcpp::Any IRGeneratorVisitor::visitEqual_expression(ifccParser::Equal_expressionContext *ctx)
+{
+    std::string left = asString(visit(ctx->expression(0)));
+    std::string right = asString(visit(ctx->expression(1)));
+    Type type = Type::INT32;
+
+    int leftValue, rightValue;
+    bool leftIsConstant = isConstant(left, leftValue);
+    bool rightIsConstant = isConstant(right, rightValue);
+
+    if (leftIsConstant && rightIsConstant)
+    {
+        return emitConstant(type, leftValue == rightValue);
+    }
+
+    std::string tmp = cfg->addTempVariable(type);
+    Block *block = cfg->getCurrentBlock();
+    block->addInstruction(new Equal(block, type, tmp, left, right));
     return tmp;
 }

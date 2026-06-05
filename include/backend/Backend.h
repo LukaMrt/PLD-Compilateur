@@ -17,6 +17,7 @@ class BitwiseAnd;
 class BitwiseOr;
 class BitwiseXor;
 class CallFunction;
+class Equal;
 
 class Backend
 {
@@ -43,4 +44,5 @@ public:
     virtual void emit(BitwiseOr *instr, std::ostream &output) = 0;
     virtual void emit(BitwiseXor *instr, std::ostream &output) = 0;
     virtual void emit(CallFunction *instr, std::ostream &output) = 0;
+    virtual void emit(Equal *instr, std::ostream &output) = 0;
 };
