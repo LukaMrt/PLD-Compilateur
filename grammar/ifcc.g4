@@ -20,12 +20,18 @@ block
     : CURLY_BRACE_OPEN statement* CURLY_BRACE_CLOSE
     ;
 
+following_condition
+    : statement
+    | block 
+    | SEMI_COLON
+    ;
+
 statement
     : instruction SEMI_COLON
     | variable_declaration SEMI_COLON
     | return_statement SEMI_COLON
-    | IF BRACKET_OPEN instruction BRACKET_CLOSE (statement | block | SEMI_COLON) (ELSE (statement | block | SEMI_COLON))?
-    | WHILE BRACKET_OPEN instruction BRACKET_CLOSE (statement | block | SEMI_COLON)
+    | IF BRACKET_OPEN instruction BRACKET_CLOSE following_condition (ELSE following_condition)?
+    | WHILE BRACKET_OPEN instruction BRACKET_CLOSE following_condition
     ;
 
 variable_declaration
