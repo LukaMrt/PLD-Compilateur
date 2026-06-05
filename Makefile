@@ -1,10 +1,9 @@
-UNAME_S := $(shell uname -s)
 UNAME_M := $(shell uname -m)
 
 ifeq ($(UNAME_M), arm64)
     CONFIG := config/config-macos.mk
-else ifeq ($(UNAME_S), Linux)
-    CONFIG := config/config-wsl-2025.mk
+else ifeq ($(UNAME_M), x86_64)
+    CONFIG := config/config-linux.mk
 else
     $(error Unsupported platform: $(UNAME_S) $(UNAME_M). Add a config file in config/ and update this Makefile.)
 endif
