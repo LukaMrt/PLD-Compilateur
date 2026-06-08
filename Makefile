@@ -27,9 +27,25 @@ GENERATED_OBJECTS=build/ifccBaseVisitor.o \
 	build/ifccVisitor.o \
 	build/ifccParser.o
 
-# Objets de notre code C++ : découverts automatiquement depuis src/.
-# Ajouter un nouveau .cpp sous src/ suffit, pas besoin de toucher au Makefile.
-SRC_OBJECTS=$(patsubst src/%.cpp,build/%.o,$(shell find src -name '*.cpp'))
+SRC_OBJECTS=build/main.o \
+	build/Block.o \
+	build/ControlFlowGraph.o \
+	build/IRGeneratorVisitor.o \
+	build/SymbolTableVisitor.o \
+	build/instructions/Add.o \
+	build/instructions/BitwiseAnd.o \
+	build/instructions/BitwiseOr.o \
+	build/instructions/BitwiseXor.o \
+	build/instructions/CallFunction.o \
+	build/instructions/Copy.o \
+	build/instructions/Divide.o \
+	build/instructions/LoadConstant.o \
+	build/instructions/Modulo.o \
+	build/instructions/Multiply.o \
+	build/instructions/Negate.o \
+	build/instructions/Subtract.o \
+	build/backend/ARMBackend.o \
+	build/backend/X86Backend.o
 
 OBJECTS=$(GENERATED_OBJECTS) $(SRC_OBJECTS)
 
