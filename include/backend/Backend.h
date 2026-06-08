@@ -21,6 +21,8 @@ class Equal;
 class NotEqual;
 class Lesser;
 class Greater;
+class LesserOrEqual;
+class GreaterOrEqual;
 
 class Backend
 {
@@ -51,4 +53,6 @@ public:
     virtual void emit(NotEqual *instr, std::ostream &output) = 0;
     virtual void emit(Lesser *instr, std::ostream &output) = 0;
     virtual void emit(Greater *instr, std::ostream &output) = 0;
+    virtual void emit(LesserOrEqual *instr, std::ostream &output) = 0;
+    virtual void emit(GreaterOrEqual *instr, std::ostream &output) = 0;
 };

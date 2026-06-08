@@ -29,4 +29,6 @@ public:
     void emit(NotEqual *instr, std::ostream &output) override;
     void emit(Lesser *instr, std::ostream &output) override;
     void emit(Greater *instr, std::ostream &output) override;
+    void emit(LesserOrEqual *instr, std::ostream &output) override;
+    void emit(GreaterOrEqual *instr, std::ostream &output) override;
 };

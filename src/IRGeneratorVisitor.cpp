@@ -16,6 +16,8 @@
 #include "instructions/NotEqual.h"
 #include "instructions/Lesser.h"
 #include "instructions/Greater.h"
+#include "instructions/LesserOrEqual.h"
+#include "instructions/GreaterOrEqual.h"
 
 static std::string asString(antlrcpp::Any any)
 {
@@ -450,6 +452,26 @@ antlrcpp::Any IRGeneratorVisitor::visitComparison_expression(ifccParser::Compari
         tmp = cfg->addTempVariable(type);
         Block *block = cfg->getCurrentBlock();
         block->addInstruction(new Greater(block, type, tmp, left, right));
+    }
+    else if (op == ifccParser::LESSER_OR_EQUAL)
+    {
+        if (leftIsConstant && rightIsConstant)
+        {
+            return emitConstant(type, leftValue <= rightValue);
+        }
+        tmp = cfg->addTempVariable(type);
+        Block *block = cfg->getCurrentBlock();
+        block->addInstruction(new LesserOrEqual(block, type, tmp, left, right));
+    }
+    else if (op == ifccParser::GREATER_OR_EQUAL)
+    {
+        if (leftIsConstant && rightIsConstant)
+        {
+            return emitConstant(type, leftValue >= rightValue);
+        }
+        tmp = cfg->addTempVariable(type);
+        Block *block = cfg->getCurrentBlock();
+        block->addInstruction(new GreaterOrEqual(block, type, tmp, left, right));
     }
 
     return tmp;
