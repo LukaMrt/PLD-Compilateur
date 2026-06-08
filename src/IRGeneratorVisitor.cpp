@@ -402,8 +402,8 @@ antlrcpp::Any IRGeneratorVisitor::visitEqual_expression(ifccParser::Equal_expres
         {
             return emitConstant(type, leftValue == rightValue);
         }
-        tmp = cfg->addTempVariable(type);
-        Block *block = cfg->getCurrentBlock();
+        tmp = currentCFG->addTempVariable(type);
+        Block *block = currentCFG->getCurrentBlock();
         block->addInstruction(new Equal(block, type, tmp, left, right));
     }
     else if (op == ifccParser::NOT_EQUAL)
@@ -412,8 +412,8 @@ antlrcpp::Any IRGeneratorVisitor::visitEqual_expression(ifccParser::Equal_expres
         {
             return emitConstant(type, leftValue != rightValue);
         }
-        tmp = cfg->addTempVariable(type);
-        Block *block = cfg->getCurrentBlock();
+        tmp = currentCFG->addTempVariable(type);
+        Block *block = currentCFG->getCurrentBlock();
         block->addInstruction(new NotEqual(block, type, tmp, left, right));
     }
 
@@ -439,8 +439,8 @@ antlrcpp::Any IRGeneratorVisitor::visitComparison_expression(ifccParser::Compari
         {
             return emitConstant(type, leftValue < rightValue);
         }
-        tmp = cfg->addTempVariable(type);
-        Block *block = cfg->getCurrentBlock();
+        tmp = currentCFG->addTempVariable(type);
+        Block *block = currentCFG->getCurrentBlock();
         block->addInstruction(new Lesser(block, type, tmp, left, right));
     }
     else if (op == ifccParser::GREATER)
@@ -449,8 +449,8 @@ antlrcpp::Any IRGeneratorVisitor::visitComparison_expression(ifccParser::Compari
         {
             return emitConstant(type, leftValue > rightValue);
         }
-        tmp = cfg->addTempVariable(type);
-        Block *block = cfg->getCurrentBlock();
+        tmp = currentCFG->addTempVariable(type);
+        Block *block = currentCFG->getCurrentBlock();
         block->addInstruction(new Greater(block, type, tmp, left, right));
     }
     else if (op == ifccParser::LESSER_OR_EQUAL)
@@ -459,8 +459,8 @@ antlrcpp::Any IRGeneratorVisitor::visitComparison_expression(ifccParser::Compari
         {
             return emitConstant(type, leftValue <= rightValue);
         }
-        tmp = cfg->addTempVariable(type);
-        Block *block = cfg->getCurrentBlock();
+        tmp = currentCFG->addTempVariable(type);
+        Block *block = currentCFG->getCurrentBlock();
         block->addInstruction(new LesserOrEqual(block, type, tmp, left, right));
     }
     else if (op == ifccParser::GREATER_OR_EQUAL)
@@ -469,8 +469,8 @@ antlrcpp::Any IRGeneratorVisitor::visitComparison_expression(ifccParser::Compari
         {
             return emitConstant(type, leftValue >= rightValue);
         }
-        tmp = cfg->addTempVariable(type);
-        Block *block = cfg->getCurrentBlock();
+        tmp = currentCFG->addTempVariable(type);
+        Block *block = currentCFG->getCurrentBlock();
         block->addInstruction(new GreaterOrEqual(block, type, tmp, left, right));
     }
 
