@@ -25,4 +25,10 @@ public:
     void emit(BitwiseOr *instr, std::ostream &output) override;
     void emit(BitwiseXor *instr, std::ostream &output) override;
     void emit(CallFunction *instr, std::ostream &output) override;
+    void emit(Equal *instr, std::ostream &output) override;
+    void emit(NotEqual *instr, std::ostream &output) override;
+    void emit(Lesser *instr, std::ostream &output) override;
+    void emit(Greater *instr, std::ostream &output) override;
+    void emit(LesserOrEqual *instr, std::ostream &output) override;
+    void emit(GreaterOrEqual *instr, std::ostream &output) override;
 };
