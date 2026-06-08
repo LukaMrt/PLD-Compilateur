@@ -32,7 +32,19 @@ void X86Backend::emitPrologue(ControlFlowGraph *cfg, std::ostream &output)
     int paramIndex = 0;
     for (auto parameter : cfg->getParameters())
     {
-        output << "    movl " << parameterToLocation(paramIndex) << ", " << varToLocation(parameter.first, cfg) << "\n";
+        if (paramIndex < 6)
+        {
+            output << "    movl " << parameterToLocation(paramIndex) << ", " << varToLocation(parameter.first, cfg) << "\n";
+        }
+        else
+        {
+            // Args 7+ : passés sur la pile par l'appelant, à des offsets positifs
+            // depuis %rbp (16 = 7ᵉ arg, 24 = 8ᵉ, ...). On les recopie dans le cadre
+            // local de la fonction pour les traiter comme des variables normales.
+            int stackOffset = 16 + 8 * (paramIndex - 6);
+            output << "    movl " << stackOffset << "(%rbp), %eax\n";
+            output << "    movl %eax, " << varToLocation(parameter.first, cfg) << "\n";
+        }
         paramIndex++;
     }
 
@@ -172,11 +184,30 @@ void X86Backend::emit(CallFunction *instr, std::ostream &output)
 {
     ControlFlowGraph *cfg = instr->getBlock()->getControlFlowGraph();
     auto args = instr->getArguments();
-    for (size_t i = 0; i < args.size(); i++)
+
+    size_t stackCount = args.size() > 6 ? args.size() - 6 : 0;
+    bool needsPadding = (stackCount % 2) == 1;
+
+    if (needsPadding)
+        output << "    subq $8, %rsp\n";
+
+    for (size_t i = args.size(); i-- > 6;)
+    {
+        output << "    movl " << varToLocation(args[i], cfg) << ", %eax\n";
+        output << "    pushq %rax\n";
+    }
+
+    for (size_t i = 0; i < args.size() && i < 6; i++)
     {
         output << "    movl " << varToLocation(args[i], cfg) << ", " << parameterToLocation(i) << "\n";
     }
+
     output << "    call " << instr->getFunctionName() << "\n";
+
+    int cleanup = 8 * stackCount + (needsPadding ? 8 : 0);
+    if (cleanup > 0)
+        output << "    addq $" << cleanup << ", %rsp\n";
+
     output << "    movl %eax, " << varToLocation(instr->getDestination(), cfg) << "\n";
 }
 
