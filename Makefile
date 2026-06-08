@@ -1,4 +1,8 @@
-UNAME_M := $(shell uname -m 2>/dev/null)
+ifdef COMSPEC
+    UNAME_M := windows
+else
+    UNAME_M := $(shell uname -m)
+endif
 
 ifeq ($(UNAME_M), arm64)
     CONFIG := config/config-macos.mk
