@@ -390,6 +390,8 @@ antlrcpp::Any IRGeneratorVisitor::visitStatement(ifccParser::StatementContext *c
 
         Block *afterIfBlock = new Block(currentCFG, currentCFG->getCurrentBlock()->getLabel() + "_if_end" /*+ std::to_string(ifBlockCount)*/);
 
+        currentCFG->getCurrentBlock()->setFalseCaseBlock(afterIfBlock);
+
         visit(ctx->instruction());
         Block *trueBlock = new Block(currentCFG, currentCFG->getCurrentBlock()->getLabel() + "_if_true" /*+ std::to_string(ifBlockCount)*/);
         currentCFG->addBlock(trueBlock);
@@ -408,6 +410,20 @@ antlrcpp::Any IRGeneratorVisitor::visitStatement(ifccParser::StatementContext *c
         }
         
         currentCFG->addBlock(afterIfBlock);
+        return 0;
+    } else if (ctx->WHILE()) {
+        Block *testBlock = new Block(currentCFG, currentCFG->getCurrentBlock()->getLabel() + "_while_test" /*+ std::to_string(whileBlockCount)*/);
+        Block *bodyBlock = new Block(currentCFG, currentCFG->getCurrentBlock()->getLabel() + "_while_body" /*+ std::to_string(whileBlockCount)*/);
+        Block *afterWhileBlock = new Block(currentCFG, currentCFG->getCurrentBlock()->getLabel() + "_while_end" /*+ std::to_string(whileBlockCount)*/);
+
+        currentCFG->addBlock(testBlock);
+        visit(ctx->instruction());
+        currentCFG->getCurrentBlock()->setFalseCaseBlock(afterWhileBlock);
+        currentCFG->addBlock(bodyBlock);
+        visit(ctx->following_condition(0));
+        currentCFG->getCurrentBlock()->setTrueCaseBlock(testBlock);
+
+        currentCFG->addBlock(afterWhileBlock);
         return 0;
     } else {
         return visitChildren(ctx);
