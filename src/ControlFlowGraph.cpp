@@ -5,7 +5,7 @@ ControlFlowGraph::ControlFlowGraph(std::string label)
 {
 }
 
-void ControlFlowGraph::addVariable(std::string name, Type type)
+void ControlFlowGraph::addVariable(std::string name, Type type, int pointerDepth)
 {
     if (variableMap.find(name) != variableMap.end())
     {
@@ -13,7 +13,7 @@ void ControlFlowGraph::addVariable(std::string name, Type type)
         exit(1);
     }
     currentOffset += typeSize(type);
-    variableMap[name] = {type, currentOffset};
+    variableMap[name] = Variable(type, currentOffset, pointerDepth);
 }
 
 std::string ControlFlowGraph::addTempVariable(Type type)
@@ -41,7 +41,7 @@ std::string ControlFlowGraph::getOffset(std::string name)
 void ControlFlowGraph::addParameter(std::string name, Type type)
 {
     int index = parametersMap.size();
-    parametersMap[name] = {type, index};
+    parametersMap[name] = Variable(type, 0);
 }
 
 std::vector<std::pair<std::string, Variable>> ControlFlowGraph::getParameters()

@@ -23,6 +23,9 @@ class Lesser;
 class Greater;
 class LesserOrEqual;
 class GreaterOrEqual;
+class DereferenceRead;
+class DereferenceWrite;
+class Reference;
 
 class Backend
 {
@@ -56,4 +59,7 @@ public:
     virtual void emit(Greater *instr, std::ostream &output) = 0;
     virtual void emit(LesserOrEqual *instr, std::ostream &output) = 0;
     virtual void emit(GreaterOrEqual *instr, std::ostream &output) = 0;
+    virtual void emit(DereferenceRead *instr, std::ostream &output) = 0;
+    virtual void emit(DereferenceWrite *instr, std::ostream &output) = 0;
+    virtual void emit(Reference *instr, std::ostream &output) = 0;
 };

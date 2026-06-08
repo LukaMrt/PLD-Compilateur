@@ -36,7 +36,9 @@ antlrcpp::Any SymbolTableVisitor::visitFunction_parameter_declaration(ifccParser
 {
     std::string varName = ctx->IDENTIFIER()->getText();
     Type type = stringToType(ctx->TYPE()->getText());
-    this->declareVariable(varName, type);
+    int pointerDepth = ctx->TIMES().size();
+
+    this->declareVariable(varName, type, pointerDepth);
     functionTable[currentFunction].parameterTypes.push_back(type);
     return 0;
 }
@@ -46,25 +48,26 @@ antlrcpp::Any SymbolTableVisitor::visitVariable_definition_with_instruction(ifcc
     std::string varName = ctx->IDENTIFIER()->getText();
     // Le TYPE n'est pas sur le variable_definition mais sur son parent
     // variable_declaration ('int' partagé par 'int a, b, c;').
+    int pointerDepth = ctx->TIMES().size();
     auto declaration = dynamic_cast<ifccParser::Variable_declarationContext *>(ctx->parent);
-    this->declareVariable(varName, stringToType(declaration->TYPE()->getText()));
+
+    this->declareVariable(varName, stringToType(declaration->TYPE()->getText()), pointerDepth);
     return visitChildren(ctx);
 }
 
 antlrcpp::Any SymbolTableVisitor::visitVariable_definition_without_instruction(ifccParser::Variable_definition_without_instructionContext *ctx)
 {
     std::string varName = ctx->IDENTIFIER()->getText();
+    int pointerDepth = ctx->TIMES().size();
     auto declaration = dynamic_cast<ifccParser::Variable_declarationContext *>(ctx->parent);
-    this->declareVariable(varName, stringToType(declaration->TYPE()->getText()));
+
+    this->declareVariable(varName, stringToType(declaration->TYPE()->getText()), pointerDepth);
     return 0;
 }
 
-antlrcpp::Any SymbolTableVisitor::visitInstruction(ifccParser::InstructionContext *ctx)
+antlrcpp::Any SymbolTableVisitor::visitIdent_lvalue(ifccParser::Ident_lvalueContext *ctx)
 {
-    for (auto &id : ctx->IDENTIFIER())
-    {
-        this->checkDeclared(id->getText());
-    }
+    this->checkDeclared(ctx->IDENTIFIER()->getText());
     return visitChildren(ctx);
 }
 

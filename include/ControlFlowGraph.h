@@ -19,7 +19,7 @@ public:
 	void debug(std::ostream &output) const;
 
 	// variable map management
-	void addVariable(std::string name, Type type);
+	void addVariable(std::string name, Type type, int pointerDepth = 0);
 	std::string addTempVariable(Type type);
 	Variable getVar(std::string name);
 	std::string getOffset(std::string name);

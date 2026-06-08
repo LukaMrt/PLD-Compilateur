@@ -17,10 +17,11 @@
 #include "instructions/NotEqual.h"
 #include "instructions/Lesser.h"
 #include "instructions/Greater.h"
-#include "instructions/Lesser.h"
-#include "instructions/Greater.h"
 #include "instructions/LesserOrEqual.h"
 #include "instructions/GreaterOrEqual.h"
+#include "instructions/Reference.h"
+#include "instructions/DereferenceRead.h"
+#include "instructions/DereferenceWrite.h"
 
 void X86Backend::emitPrologue(ControlFlowGraph *cfg, std::ostream &output)
 {
@@ -275,4 +276,27 @@ void X86Backend::emit(GreaterOrEqual *instr, std::ostream &output)
     output << "    setge %al\n";
     output << "    movzbl %al, %eax\n";
     output << "    movl %eax, " << varToLocation(instr->getDestination(), cfg) << "\n";
+}
+
+void X86Backend::emit(Reference *instr, std::ostream &output)
+{
+    ControlFlowGraph *cfg = instr->getBlock()->getControlFlowGraph();
+    output << "    leaq " << varToLocation(instr->getSrc(), cfg) << ", %rax\n";
+    output << "    movq %rax, " << varToLocation(instr->getDestination(), cfg) << "\n";
+}
+
+void X86Backend::emit(DereferenceRead *instr, std::ostream &output)
+{
+    ControlFlowGraph *cfg = instr->getBlock()->getControlFlowGraph();
+    output << "    movq " << varToLocation(instr->getSrc(), cfg) << ", %rax\n";
+    output << "    movl (%rax), %eax\n";
+    output << "    movl %eax, " << varToLocation(instr->getDestination(), cfg) << "\n";
+}
+
+void X86Backend::emit(DereferenceWrite *instr, std::ostream &output)
+{
+    ControlFlowGraph *cfg = instr->getBlock()->getControlFlowGraph();
+    output << "    movl " << varToLocation(instr->getSrc(), cfg) << ", %eax\n";
+    output << "    movq " << varToLocation(instr->getDest(), cfg) << ", %rcx\n";
+    output << "    movl %eax, (%rcx)\n";
 }

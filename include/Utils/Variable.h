@@ -6,20 +6,12 @@ struct Variable
 {
 	Type type;
 	int offset;
-	bool isPointer;
-	Variable* pointedVariable; // Valable seulement si isPointer == true, sinon inutilisé et offset est l'offset de la variable elle-même. Permet d'accéder au type de la variable pointée pour les opérations sur pointeurs (déréférencement, arithmétique de pointeurs).
+	int pointerDepth;
+	bool used;
 
-	Variable()
-		: type(), offset(0), isPointer(false), pointedVariable(nullptr)
-	{
-	}
-
-	Variable getPointedVariable() const
-	{
-		if (!isPointer || pointedVariable == nullptr)
-		{
-			return *this;
-		}
-		return pointedVariable->getPointedVariable();
-	}
+	Variable() : type(), offset(0), pointerDepth(0), used(false) {}
+	Variable(Type type, int pointerDepth, bool used = false)
+		: type(type), offset(0), pointerDepth(pointerDepth), used(used) {}
+	Variable(Type type, int offset, int pointerDepth, bool used = false)
+		: type(type), offset(offset), pointerDepth(pointerDepth), used(used) {}
 };

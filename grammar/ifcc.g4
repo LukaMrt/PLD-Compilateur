@@ -5,7 +5,7 @@ axiom
     ;
 
 function
-    : TYPE pointer? IDENTIFIER BRACKET_OPEN function_parameters_declaration? BRACKET_CLOSE block
+    : TYPE TIMES* IDENTIFIER BRACKET_OPEN function_parameters_declaration? BRACKET_CLOSE block
     ;
 
 function_parameters_declaration
@@ -13,11 +13,7 @@ function_parameters_declaration
     ;
 
 function_parameter_declaration
-    : TYPE pointer? IDENTIFIER (EQUAL instruction)?
-    ;
-
-pointer
-    : TIMES pointer?
+    : TYPE TIMES* IDENTIFIER (EQUAL instruction)?
     ;
 
 block
@@ -39,28 +35,26 @@ statement
     ;
 
 variable_declaration
-    : TYPE pointer? variable_definition (COMMA variable_definition)*
+    : TYPE variable_definition (COMMA variable_definition)*
     ;
 
 variable_definition
-    : IDENTIFIER EQUAL instruction #variable_definition_with_instruction
-    | IDENTIFIER                   #variable_definition_without_instruction
+    : TIMES* IDENTIFIER EQUAL instruction #variable_definition_with_instruction
+    | TIMES* IDENTIFIER                   #variable_definition_without_instruction
     ;
 
-lvalue
-    : TIMES lvalue      #pointer_lvalue
+left_value
+    : TIMES left_value  #pointer_lvalue
     | IDENTIFIER        #ident_lvalue
     ;
 
 instruction
-    : lvalue EQUAL instruction  #assign_instruction
-    | expression                #expr_instruction
+    : left_value EQUAL instruction #assign_instruction
+    | expression                   #expr_instruction
     ;
 
 expression
-    : op=(MINUS | NOT) expression                                                      # unary_operation
-    | TIMES expression                                                                 # pointer_expression
-    | BITWISE_AND IDENTIFIER                                                           # address_of_expression
+    : op=(MINUS | NOT | BITWISE_AND | TIMES) expression                                # unary_operation
     | expression op=(TIMES | DIVIDE | MODULO) expression                               # multiplicative_expression
     | expression op=(PLUS | MINUS) expression                                          # additive_expression
     | expression op=(LESSER | LESSER_OR_EQUAL | GREATER_OR_EQUAL | GREATER) expression # comparison_expression
