@@ -177,6 +177,7 @@ void X86Backend::emit(CallFunction *instr, std::ostream &output)
         output << "    movl " << varToLocation(args[i], cfg) << ", " << parameterToLocation(i) << "\n";
     }
     output << "    call " << instr->getFunctionName() << "\n";
+    output << "    movl %eax, " << varToLocation(instr->getDestination(), cfg) << "\n";
 }
 
 void X86Backend::emit(Equal *instr, std::ostream &output)
