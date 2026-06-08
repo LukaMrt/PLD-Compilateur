@@ -69,6 +69,13 @@ int main(int argn, const char **argv)
     SymbolTableVisitor symbolTableVisitor;
     symbolTableVisitor.visit(tree);
 
+    auto functionTable = symbolTableVisitor.getFunctionTable();
+    if (functionTable.find("main") == functionTable.end())
+    {
+        std::cerr << "error: no 'main' function defined" << std::endl;
+        exit(1);
+    }
+
     IRGeneratorVisitor irVisitor(symbolTableVisitor.getAllSymbolTables());
     irVisitor.visit(tree);
 

@@ -6,6 +6,7 @@
 
 #include <map>
 #include <string>
+#include <vector>
 
 class SymbolTableVisitor : public ifccBaseVisitor
 {
@@ -16,17 +17,26 @@ public:
                 Type type;
         };
 
+        struct FunctionInfo
+        {
+                Type returnType;
+                std::vector<Type> parameterTypes;
+        };
+
         virtual antlrcpp::Any visitFunction(ifccParser::FunctionContext *ctx) override;
         virtual antlrcpp::Any visitFunction_parameter_declaration(ifccParser::Function_parameter_declarationContext *ctx) override;
         virtual antlrcpp::Any visitVariable_definition_with_instruction(ifccParser::Variable_definition_with_instructionContext *ctx) override;
         virtual antlrcpp::Any visitVariable_definition_without_instruction(ifccParser::Variable_definition_without_instructionContext *ctx) override;
         virtual antlrcpp::Any visitInstruction(ifccParser::InstructionContext *ctx) override;
         virtual antlrcpp::Any visitVariable_expression(ifccParser::Variable_expressionContext *ctx) override;
+        virtual antlrcpp::Any visitFunction_call(ifccParser::Function_callContext *ctx) override;
         std::map<std::string, VariableInfo> getSymbolTable(const std::string &funcName) const { return allSymbolTables.at(funcName); }
         std::map<std::string, std::map<std::string, VariableInfo>> getAllSymbolTables() const { return allSymbolTables; }
+        std::map<std::string, FunctionInfo> getFunctionTable() const { return functionTable; }
 
 private:
         std::map<std::string, std::map<std::string, VariableInfo>> allSymbolTables;
+        std::map<std::string, FunctionInfo> functionTable;
         std::string currentFunction;
 
         std::map<std::string, VariableInfo> &currentTable() { return allSymbolTables[currentFunction]; }
