@@ -33,6 +33,6 @@ void Block::generateASM(Backend &backend, std::ostream &output)
     }
     else if (false_case_block != nullptr)
     {
-        backend.emitJump(false_case_block, output);
+        backend.emitFalseJump(false_case_block, output);
     }
 }

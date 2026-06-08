@@ -7,6 +7,7 @@ class X86Backend : public Backend
 public:
     void emitBlockLabel(Block *block, std::ostream &output) override;
     void emitJump(Block *block, std::ostream &output) override;
+    void emitFalseJump(Block *block, std::ostream &output) override;
     void emitPrologue(ControlFlowGraph *cfg, std::ostream &output) override;
     void emitEpilogue(ControlFlowGraph *cfg, std::ostream &output) override;
 

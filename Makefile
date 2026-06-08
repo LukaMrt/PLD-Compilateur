@@ -135,4 +135,6 @@ docker-asm: docker-build
 docker-gui: docker-build
 	@$(DOCKER_RUN) make gui FILE=$(FILE)
 
-.PHONY: docker-build docker docker-test docker-clean docker-asm docker-gcc-asm
+re: clean all
+
+.PHONY: docker-build docker docker-test docker-clean docker-asm docker-gcc-asm docker-gui test clean re
