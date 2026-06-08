@@ -1,14 +1,16 @@
-UNAME_M := $(shell uname -m)
+UNAME_M := $(shell uname -m 2>/dev/null)
 
 ifeq ($(UNAME_M), arm64)
     CONFIG := config/config-macos.mk
 else ifeq ($(UNAME_M), x86_64)
     CONFIG := config/config-linux.mk
 else
-    $(error Unsupported platform: $(UNAME_S) $(UNAME_M). Add a config file in config/ and update this Makefile.)
+    CONFIG :=
 endif
 
+ifneq ($(CONFIG),)
 include $(CONFIG)
+endif
 
 CC=g++
 CCFLAGS=-g -c -std=c++17 -I$(ANTLRINC) -Iinclude -I. -Wno-attributes
