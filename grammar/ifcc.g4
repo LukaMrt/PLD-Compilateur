@@ -5,7 +5,7 @@ axiom
     ;
 
 function
-    : TYPE IDENTIFIER BRACKET_OPEN function_parameters_declaration? BRACKET_CLOSE block
+    : TYPE pointer? IDENTIFIER BRACKET_OPEN function_parameters_declaration? BRACKET_CLOSE block
     ;
 
 function_parameters_declaration
@@ -13,7 +13,11 @@ function_parameters_declaration
     ;
 
 function_parameter_declaration
-    : TYPE IDENTIFIER (EQUAL instruction)?
+    : TYPE pointer? IDENTIFIER (EQUAL instruction)?
+    ;
+
+pointer
+    : TIMES pointer?
     ;
 
 block
@@ -22,7 +26,7 @@ block
 
 following_condition
     : statement
-    | block 
+    | block
     | SEMI_COLON
     ;
 
@@ -35,7 +39,7 @@ statement
     ;
 
 variable_declaration
-    : TYPE variable_definition (COMMA variable_definition)*
+    : TYPE pointer? variable_definition (COMMA variable_definition)*
     ;
 
 variable_definition
@@ -43,12 +47,20 @@ variable_definition
     | IDENTIFIER                   #variable_definition_without_instruction
     ;
 
+lvalue
+    : TIMES lvalue      #pointer_lvalue
+    | IDENTIFIER        #ident_lvalue
+    ;
+
 instruction
-    : (IDENTIFIER EQUAL)* expression
+    : lvalue EQUAL instruction  #assign_instruction
+    | expression                #expr_instruction
     ;
 
 expression
     : op=(MINUS | NOT) expression                                                      # unary_operation
+    | TIMES expression                                                                 # pointer_expression
+    | BITWISE_AND IDENTIFIER                                                           # address_of_expression
     | expression op=(TIMES | DIVIDE | MODULO) expression                               # multiplicative_expression
     | expression op=(PLUS | MINUS) expression                                          # additive_expression
     | expression op=(LESSER | LESSER_OR_EQUAL | GREATER_OR_EQUAL | GREATER) expression # comparison_expression

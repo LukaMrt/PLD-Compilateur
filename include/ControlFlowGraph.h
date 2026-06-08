@@ -7,8 +7,8 @@
 
 #include "Block.h"
 #include "backend/Backend.h"
-#include "struct/Type.h"
-#include "struct/Variable.h"
+#include "utils/Type.h"
+#include "utils/Variable.h"
 
 class ControlFlowGraph
 {

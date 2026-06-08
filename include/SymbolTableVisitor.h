@@ -2,7 +2,7 @@
 
 #include "antlr4-runtime.h"
 #include "generated/ifccBaseVisitor.h"
-#include "struct/Type.h"
+#include "utils/Type.h"
 
 #include <map>
 #include <string>
@@ -38,6 +38,8 @@ private:
         std::map<std::string, std::map<std::string, VariableInfo>> allSymbolTables;
         std::map<std::string, FunctionInfo> functionTable;
         std::string currentFunction;
+
+        
 
         std::map<std::string, VariableInfo> &currentTable() { return allSymbolTables[currentFunction]; }
 

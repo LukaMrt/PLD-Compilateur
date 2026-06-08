@@ -1,7 +1,7 @@
 #pragma once
 
 #include <iostream>
-#include "struct/Type.h"
+#include "utils/Type.h"
 
 class Block;
 class Backend;

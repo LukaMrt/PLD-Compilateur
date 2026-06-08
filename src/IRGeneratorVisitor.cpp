@@ -114,6 +114,15 @@ antlrcpp::Any IRGeneratorVisitor::visitInstruction(ifccParser::InstructionContex
     return srcVar;
 }
 
+antlrcpp::Any IRGeneratorVisitor::visitAssign_instruction(ifccParser::Assign_instructionContext *ctx)
+{
+    
+}
+antlrcpp::Any IRGeneratorVisitor::visitExpr_instruction(ifccParser::Expr_instructionContext *ctx)
+{
+    
+}
+
 antlrcpp::Any IRGeneratorVisitor::visitReturn_statement(ifccParser::Return_statementContext *ctx)
 {
     std::string srcVar = asString(visit(ctx->expression()));
@@ -189,6 +198,29 @@ antlrcpp::Any IRGeneratorVisitor::visitUnary_operation(ifccParser::Unary_operati
     }
 
     return tmp;
+}
+
+antlrcpp::Any IRGeneratorVisitor::visitPointer_lvalue(ifccParser::Pointer_lvalueContext *ctx)
+{
+    // TODO
+    return 0;
+}
+
+antlrcpp::Any IRGeneratorVisitor::visitIdent_lvalue(ifccParser::Ident_lvalueContext *ctx)
+{
+    return ctx->IDENTIFIER()->getText();
+}
+
+antlrcpp::Any IRGeneratorVisitor::visitPointer_expression(ifccParser::Pointer_expressionContext *ctx)
+{
+    // TODO
+    return 0;
+}
+
+antlrcpp::Any IRGeneratorVisitor::visitAdress_of_expression(ifccParser::Adress_of_expressionContext *ctx)
+{
+    // TODO
+    return 0;
 }
 
 antlrcpp::Any IRGeneratorVisitor::visitBracketed_expression(ifccParser::Bracketed_expressionContext *ctx)

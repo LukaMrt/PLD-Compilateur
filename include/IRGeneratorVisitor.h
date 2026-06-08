@@ -22,6 +22,12 @@ public:
     virtual antlrcpp::Any visitVariable_definition_with_instruction(ifccParser::Variable_definition_with_instructionContext *ctx) override;
     virtual antlrcpp::Any visitVariable_definition_without_instruction(ifccParser::Variable_definition_without_instructionContext *ctx) override;
     virtual antlrcpp::Any visitInstruction(ifccParser::InstructionContext *ctx) override;
+    virtual antlrcpp::Any visitAssign_instruction(ifccParser::Assign_instructionContext *ctx) override; 
+    virtual antlrcpp::Any visitExpr_instruction(ifccParser::Expr_instructionContext *ctx) override; 
+    virtual antlrcpp::Any visitPointer_lvalue(ifccParser::Pointer_lvalueContext *ctx) override;
+    virtual antlrcpp::Any visitIdent_lvalue(ifccParser::Ident_lvalueContext *ctx) override;
+    virtual antlrcpp::Any visitPointer_expression(ifccParser::Pointer_expressionContext *ctx) override;
+    virtual antlrcpp::Any visitAdress_of_expression(ifccParser::Adress_of_expressionContext *ctx) override;
     virtual antlrcpp::Any visitConstant_expression(ifccParser::Constant_expressionContext *ctx) override;
     virtual antlrcpp::Any visitCharacter_expression(ifccParser::Character_expressionContext *ctx) override;
     virtual antlrcpp::Any visitVariable_expression(ifccParser::Variable_expressionContext *ctx) override;
