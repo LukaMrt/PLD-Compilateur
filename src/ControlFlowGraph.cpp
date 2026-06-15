@@ -12,14 +12,16 @@ void ControlFlowGraph::addVariable(std::string name, Type type, int pointerDepth
         std::cerr << "Error: variable '" << name << "' already exists in the current scope." << std::endl;
         exit(1);
     }
-    currentOffset += typeSize(type);
-    variableMap[name] = Variable(type, currentOffset, pointerDepth);
+    Variable variable(type, 0, pointerDepth);
+    currentOffset += variable.size();
+    variable.offset = currentOffset;
+    variableMap[name] = variable;
 }
 
-std::string ControlFlowGraph::addTempVariable(Type type)
+std::string ControlFlowGraph::addTempVariable(Type type, int pointerDepth)
 {
     std::string tempVarName = "$temp" + std::to_string(variableMap.size());
-    addVariable(tempVarName, type);
+    addVariable(tempVarName, type, pointerDepth);
     return tempVarName;
 }
 

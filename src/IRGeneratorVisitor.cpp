@@ -78,7 +78,7 @@ antlrcpp::Any IRGeneratorVisitor::visitFunction_parameter_declaration(ifccParser
     int pointerDepth = ctx->TIMES().size();
 
     currentCFG->addParameter(varName, type);
-    currentCFG->addVariable(varName, type);
+    currentCFG->addVariable(varName, type, pointerDepth);
     return 0;
 }
 
@@ -189,7 +189,8 @@ antlrcpp::Any IRGeneratorVisitor::visitFunction_call(ifccParser::Function_callCo
 antlrcpp::Any IRGeneratorVisitor::visitUnary_operation(ifccParser::Unary_operationContext *ctx)
 {
     std::string srcVar = asString(visit(ctx->expression()));
-    Type type = promote(currentCFG->getVar(srcVar).type, currentCFG->getVar(srcVar).type);
+    Variable srcInfo = currentCFG->getVar(srcVar);
+    Type type = promote(srcInfo.type, srcInfo.type);
 
     int srcValue;
     if (ctx->op->getType() == ifccParser::MINUS && isConstant(srcVar, srcValue))
@@ -197,7 +198,16 @@ antlrcpp::Any IRGeneratorVisitor::visitUnary_operation(ifccParser::Unary_operati
         return emitConstant(type, -srcValue);
     }
 
-    std::string tmp = currentCFG->addTempVariable(type);
+    // Le résultat de `&x` est un pointeur (profondeur +1) ; celui de `*p` est
+    // ce que pointe p (profondeur -1). Le temporaire doit porter cette
+    // profondeur pour que le backend lui réserve 8 octets et émette movq.
+    int tmpDepth = 0;
+    if (ctx->op->getType() == ifccParser::BITWISE_AND)
+        tmpDepth = srcInfo.pointerDepth + 1;
+    else if (ctx->op->getType() == ifccParser::TIMES)
+        tmpDepth = srcInfo.pointerDepth - 1;
+
+    std::string tmp = currentCFG->addTempVariable(srcInfo.type, tmpDepth);
     Block *block = currentCFG->getCurrentBlock();
     if (ctx->op->getType() == ifccParser::MINUS)
     {
@@ -227,9 +237,12 @@ antlrcpp::Any IRGeneratorVisitor::visitPointer_lvalue(ifccParser::Pointer_lvalue
 
     if (dynamic_cast<ifccParser::Pointer_lvalueContext*>(ctx->parent))
     {
-        std::string tmp = currentCFG->addTempVariable(currentCFG->getVar(inner).type);
+        Variable innerInfo = currentCFG->getVar(inner);
+        // Un déréférencement intermédiaire de `**pp` produit lui-même une
+        // adresse (profondeur -1) : sans ça le pointeur serait tronqué à 4 octets.
+        std::string tmp = currentCFG->addTempVariable(innerInfo.type, innerInfo.pointerDepth - 1);
         Block *block = currentCFG->getCurrentBlock();
-        block->addInstruction(new DereferenceRead(block, currentCFG->getVar(inner).type, tmp, inner));
+        block->addInstruction(new DereferenceRead(block, innerInfo.type, tmp, inner));
         return tmp;
     }
     return inner;
