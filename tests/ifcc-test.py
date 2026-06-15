@@ -15,20 +15,40 @@ import shutil
 import sys
 import subprocess
 
-def run_command(string, logfile=None, toscreen=False):
+def run_command(string, logfile=None, toscreen=False, timeout=None):
     """ execute `string` as a shell command. Maybe write stdout+stderr to `logfile` and/or to the toscreen.
-        return the exit status""" 
+        return the exit status"""
 
     if args.debug:
         print("ifcc-test.py: "+string)
-    
+
     process=subprocess.Popen(string,shell=True,
                              stderr=subprocess.STDOUT,stdout=subprocess.PIPE,
                              encoding='utf-8',errors='backslashreplace',
                              bufsize=0)
+
+    # Quand un timeout est demandé (exécution des programmes testés), on évite la
+    # boucle readline() qui pourrait bloquer indéfiniment si le process n'écrit
+    # rien : communicate() respecte le timeout et tue le process au besoin.
+    if timeout is not None:
+        try:
+            output,_=process.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            output,_=process.communicate()
+            output=(output or '')+f'\n[timeout: killed after {timeout}s]\n'
+            if logfile:
+                with open(logfile,'w') as lf: lf.write(output+'\nexit status: 124\n')
+            if toscreen: sys.stdout.write(output)
+            return 124
+        if logfile:
+            with open(logfile,'w') as lf: lf.write(output+f'\nexit status: {process.returncode}\n')
+        if toscreen: sys.stdout.write(output)
+        return process.returncode
+
     if logfile:
         logfile=open(logfile,'w')
-    
+
     while True:
         output = process.stdout.readline()
         if len(output) == 0: # only happens when 'process' has terminated
@@ -280,7 +300,7 @@ for jobname in jobs:
         # test-case is a valid program. we should run it
         gccstatus=run_command("gcc -o exe-gcc gcc-asm.s", "gcc-2-link.txt")
     if gccstatus == 0: # then both compile and link stage went well
-        exegccstatus=run_command("./exe-gcc", "gcc-3-execute.txt")
+        exegccstatus=run_command("./exe-gcc < /dev/null", "gcc-3-execute.txt", timeout=10)
         if args.verbose >=2:
             dumpfile("gcc-3-execute.txt")
             
@@ -318,7 +338,7 @@ for jobname in jobs:
     ## both compilers  did produce an  executable, so now we  run both
     ## these executables and compare the results.
         
-    run_command("./exe-ifcc", "ifcc-3-execute.txt")
+    run_command("./exe-ifcc < /dev/null", "ifcc-3-execute.txt", timeout=10)
     if open("gcc-3-execute.txt").read() != open("ifcc-3-execute.txt").read() :
         print("TEST FAIL (different results at execution)")
         all_ok=False
