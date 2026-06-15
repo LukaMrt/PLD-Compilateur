@@ -10,7 +10,7 @@
 
 #include "SymbolTableVisitor.h"
 #include "IRGeneratorVisitor.h"
-#include "backend/X86Backend.h"
+#include "backend/ARMBackend.h"
 
 using namespace antlr4;
 
@@ -86,7 +86,7 @@ int main(int argn, const char **argv)
         for (const auto &[name, cfg] : irVisitor.getCFGs())
             cfg->debug(std::cerr);
 
-    X86Backend backend;
+    ARMBackend backend;
     for (const auto &[name, cfg] : irVisitor.getCFGs())
         cfg->generateASM(backend, std::cout);
 

@@ -22,10 +22,7 @@ public:
     virtual antlrcpp::Any visitReturn_statement(ifccParser::Return_statementContext *ctx) override;
     virtual antlrcpp::Any visitVariable_definition_with_instruction(ifccParser::Variable_definition_with_instructionContext *ctx) override;
     virtual antlrcpp::Any visitVariable_definition_without_instruction(ifccParser::Variable_definition_without_instructionContext *ctx) override;
-    virtual antlrcpp::Any visitAssign_instruction(ifccParser::Assign_instructionContext *ctx) override; 
-    virtual antlrcpp::Any visitExpr_instruction(ifccParser::Expr_instructionContext *ctx) override; 
-    virtual antlrcpp::Any visitPointer_lvalue(ifccParser::Pointer_lvalueContext *ctx) override;
-    virtual antlrcpp::Any visitIdent_lvalue(ifccParser::Ident_lvalueContext *ctx) override;
+    virtual antlrcpp::Any visitAssignment(ifccParser::AssignmentContext *ctx) override;
     virtual antlrcpp::Any visitConstant_expression(ifccParser::Constant_expressionContext *ctx) override;
     virtual antlrcpp::Any visitCharacter_expression(ifccParser::Character_expressionContext *ctx) override;
     virtual antlrcpp::Any visitVariable_expression(ifccParser::Variable_expressionContext *ctx) override;
@@ -50,6 +47,10 @@ private:
     bool isConstant(const std::string &v, int &out) const;
     // Émet un LoadConstant dans un nouveau temp, l'enregistre comme constant et renvoie son nom.
     std::string emitConstant(Type type, int value);
+
+    // Calcule l'adresse cible d'un lvalue : n-1 DereferenceRead pour n étoiles,
+    // et renvoie le nom du temporaire (ou de la variable) contenant l'adresse.
+    std::string evalAddress(ifccParser::Left_valueContext *lv);
 
     std::map<std::string, std::map<std::string, Variable>> allSymbolTables;
     std::map<std::string, Variable> symbolTable;

@@ -84,9 +84,9 @@ antlrcpp::Any IRGeneratorVisitor::visitFunction_parameter_declaration(ifccParser
 
 antlrcpp::Any IRGeneratorVisitor::visitVariable_definition_without_instruction(ifccParser::Variable_definition_without_instructionContext *ctx)
 {
-    std::string varName = ctx->IDENTIFIER()->getText();
+    std::string varName = ctx->left_value()->IDENTIFIER()->getText();
     Type type = symbolTable.at(varName).type;
-    int pointerDepth = ctx->TIMES().size();
+    int pointerDepth = ctx->left_value()->TIMES().size();
 
     currentCFG->addVariable(varName, type, pointerDepth);
 
@@ -97,12 +97,12 @@ antlrcpp::Any IRGeneratorVisitor::visitVariable_definition_without_instruction(i
 
 antlrcpp::Any IRGeneratorVisitor::visitVariable_definition_with_instruction(ifccParser::Variable_definition_with_instructionContext *ctx)
 {
-    std::string varName = ctx->IDENTIFIER()->getText();
+    std::string varName = ctx->left_value()->IDENTIFIER()->getText();
     Type type = symbolTable.at(varName).type;
-    int pointerDepth = ctx->TIMES().size();
+    int pointerDepth = ctx->left_value()->TIMES().size();
 
-    std::string srcVar = asString(visit(ctx->instruction()));
-    
+    std::string srcVar = asString(visit(ctx->expression()));
+
     currentCFG->addVariable(varName, type, pointerDepth);
 
     Block *block = currentCFG->getCurrentBlock();
@@ -111,28 +111,25 @@ antlrcpp::Any IRGeneratorVisitor::visitVariable_definition_with_instruction(ifcc
 }
 
 
-antlrcpp::Any IRGeneratorVisitor::visitAssign_instruction(ifccParser::Assign_instructionContext *ctx)
+antlrcpp::Any IRGeneratorVisitor::visitAssignment(ifccParser::AssignmentContext *ctx)
 {
-    std::string srcVar = asString(visit(ctx->instruction()));
+    std::string srcVar = asString(visit(ctx->expression()));
     Block *block = currentCFG->getCurrentBlock();
 
-    if (dynamic_cast<ifccParser::Pointer_lvalueContext*>(ctx->left_value()))
+    // Un lvalue sans étoile désigne directement une variable : copie directe.
+    // Avec étoile(s), on calcule l'adresse cible puis on écrit à travers elle.
+    if (ctx->left_value()->TIMES().empty())
     {
-        std::string addr = asString(visit(ctx->left_value()));
-        block->addInstruction(new DereferenceWrite(block, currentCFG->getVar(addr).type, addr, srcVar));
+        std::string destVar = ctx->left_value()->IDENTIFIER()->getText();
+        block->addInstruction(new Copy(block, currentCFG->getVar(destVar).type, destVar, srcVar));
     }
     else
     {
-        std::string destVar = asString(visit(ctx->left_value()));
-        block->addInstruction(new Copy(block, currentCFG->getVar(destVar).type, destVar, srcVar));
+        std::string addr = evalAddress(ctx->left_value());
+        block->addInstruction(new DereferenceWrite(block, currentCFG->getVar(addr).type, addr, srcVar));
     }
 
     return srcVar;
-}
-
-antlrcpp::Any IRGeneratorVisitor::visitExpr_instruction(ifccParser::Expr_instructionContext *ctx)
-{
-    return visit(ctx->expression());
 }
 
 antlrcpp::Any IRGeneratorVisitor::visitReturn_statement(ifccParser::Return_statementContext *ctx)
@@ -231,31 +228,32 @@ antlrcpp::Any IRGeneratorVisitor::visitUnary_operation(ifccParser::Unary_operati
 }
 
 
-antlrcpp::Any IRGeneratorVisitor::visitPointer_lvalue(ifccParser::Pointer_lvalueContext *ctx)
+std::string IRGeneratorVisitor::evalAddress(ifccParser::Left_valueContext *lv)
 {
-    std::string inner = asString(visit(ctx->left_value()));
+    // adresse(x)   = x           (la variable contient déjà l'adresse pour *x)
+    // adresse(*p)  = valeur(p)   → 0 déréférencement intermédiaire
+    // adresse(**pp)= valeur(*pp) → 1 déréférencement intermédiaire
+    // Règle générale : pour n étoiles, n-1 DereferenceRead successifs.
+    std::string cur = lv->IDENTIFIER()->getText();
+    int depth = lv->TIMES().size();
 
-    if (dynamic_cast<ifccParser::Pointer_lvalueContext*>(ctx->parent))
+    for (int i = 1; i < depth; ++i)
     {
-        Variable innerInfo = currentCFG->getVar(inner);
-        // Un déréférencement intermédiaire de `**pp` produit lui-même une
-        // adresse (profondeur -1) : sans ça le pointeur serait tronqué à 4 octets.
-        std::string tmp = currentCFG->addTempVariable(innerInfo.type, innerInfo.pointerDepth - 1);
+        Variable curInfo = currentCFG->getVar(cur);
+        // Chaque déréférencement intermédiaire produit lui-même une adresse
+        // (profondeur -1) : sans ça le pointeur serait tronqué à 4 octets.
+        std::string tmp = currentCFG->addTempVariable(curInfo.type, curInfo.pointerDepth - 1);
         Block *block = currentCFG->getCurrentBlock();
-        block->addInstruction(new DereferenceRead(block, innerInfo.type, tmp, inner));
-        return tmp;
+        block->addInstruction(new DereferenceRead(block, curInfo.type, tmp, cur));
+        cur = tmp;
     }
-    return inner;
-}
 
-antlrcpp::Any IRGeneratorVisitor::visitIdent_lvalue(ifccParser::Ident_lvalueContext *ctx)
-{
-    return ctx->IDENTIFIER()->getText();
+    return cur;
 }
 
 antlrcpp::Any IRGeneratorVisitor::visitBracketed_expression(ifccParser::Bracketed_expressionContext *ctx)
 {
-    return visit(ctx->instruction());
+    return visit(ctx->expression());
 }
 
 antlrcpp::Any IRGeneratorVisitor::visitAdditive_expression(ifccParser::Additive_expressionContext *ctx)
@@ -454,7 +452,7 @@ antlrcpp::Any IRGeneratorVisitor::visitStatement(ifccParser::StatementContext *c
 
         currentCFG->getCurrentBlock()->setFalseCaseBlock(afterIfBlock);
 
-        visit(ctx->instruction());
+        visit(ctx->expression());
         Block *trueBlock = new Block(currentCFG, currentCFG->getCurrentBlock()->getLabel() + "_if_true" /*+ std::to_string(ifBlockCount)*/);
         currentCFG->addBlock(trueBlock);
         visit(ctx->following_condition(0));
@@ -479,7 +477,7 @@ antlrcpp::Any IRGeneratorVisitor::visitStatement(ifccParser::StatementContext *c
         Block *afterWhileBlock = new Block(currentCFG, currentCFG->getCurrentBlock()->getLabel() + "_while_end" /*+ std::to_string(whileBlockCount)*/);
 
         currentCFG->addBlock(testBlock);
-        visit(ctx->instruction());
+        visit(ctx->expression());
         currentCFG->getCurrentBlock()->setFalseCaseBlock(afterWhileBlock);
         currentCFG->addBlock(bodyBlock);
         visit(ctx->following_condition(0));

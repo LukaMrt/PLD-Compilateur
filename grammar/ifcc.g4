@@ -27,7 +27,8 @@ following_condition
     ;
 
 statement
-    : expression SEMI_COLON
+    : assignment SEMI_COLON
+    | expression SEMI_COLON
     | variable_declaration SEMI_COLON
     | return_statement SEMI_COLON
     | IF BRACKET_OPEN expression BRACKET_CLOSE following_condition (ELSE following_condition)?
@@ -47,6 +48,10 @@ left_value
     : TIMES* IDENTIFIER
     ;
 
+assignment
+    : left_value EQUAL expression
+    ;
+
 expression
     : op=(MINUS | NOT | BITWISE_AND | TIMES) expression                                # unary_operation
     | expression op=(TIMES | DIVIDE | MODULO) expression                               # multiplicative_expression
@@ -57,7 +62,6 @@ expression
     | expression BITWISE_XOR expression                                                # bitwise_xor_expression
     | expression BITWISE_OR expression                                                 # bitwise_or_expression
     | BRACKET_OPEN expression BRACKET_CLOSE                                            # bracketed_expression
-    | left_value EQUAL expression                                                      # assignment_expression
     | CONSTANT                                                                         # constant_expression
     | CHARACTER                                                                        # character_expression
     | IDENTIFIER                                                                       # variable_expression
