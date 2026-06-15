@@ -1,4 +1,4 @@
-int f() {
+int main() {
     int a = 10;
 
     // cas 0 : déclaration sans initialisation puis affectation

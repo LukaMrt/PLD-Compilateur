@@ -116,6 +116,7 @@ CURLY_BRACE_CLOSE : '}' ;
 
 WS    : [ \t\r\n] -> channel(HIDDEN);
 COMMENT : '/*' .*? '*/' -> skip ;
+LINE_COMMENT : '//' ~[\r\n]* -> skip ;
 CONSTANT : [0-9]+ ;
 DIRECTIVE : '#' .*? '\n' -> skip ;
 CHARACTER : '\'' . '\'' ;
