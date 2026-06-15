@@ -17,10 +17,29 @@
 #include "instructions/NotEqual.h"
 #include "instructions/Lesser.h"
 #include "instructions/Greater.h"
-#include "instructions/Lesser.h"
-#include "instructions/Greater.h"
 #include "instructions/LesserOrEqual.h"
 #include "instructions/GreaterOrEqual.h"
+#include "instructions/Reference.h"
+#include "instructions/DereferenceRead.h"
+#include "instructions/DereferenceWrite.h"
+#include <algorithm>
+
+// Choix de la largeur d'instruction selon la taille de la valeur (en octets) :
+// 8 octets (pointeur/double) → movq/%rax, sinon 4 octets → movl/%eax.
+namespace
+{
+    const char *movOp(int size) { return size == 8 ? "movq" : "movl"; }
+    const char *accReg(int size) { return size == 8 ? "%rax" : "%eax"; }
+
+    // Registre de passage d'argument System V selon l'index (0-5) et la largeur :
+    // 64 bits pour un pointeur, 32 bits pour un scalaire.
+    const char *argReg(int index, int size)
+    {
+        static const char *regs64[] = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
+        static const char *regs32[] = {"%edi", "%esi", "%edx", "%ecx", "%r8d", "%r9d"};
+        return size == 8 ? regs64[index] : regs32[index];
+    }
+}
 
 void X86Backend::emitPrologue(ControlFlowGraph *cfg, std::ostream &output)
 {
@@ -32,9 +51,10 @@ void X86Backend::emitPrologue(ControlFlowGraph *cfg, std::ostream &output)
     int paramIndex = 0;
     for (auto parameter : cfg->getParameters())
     {
+        int size = parameter.second.size();
         if (paramIndex < 6)
         {
-            output << "    movl " << parameterToLocation(paramIndex) << ", " << varToLocation(parameter.first, cfg) << "\n";
+            output << "    " << movOp(size) << " " << argReg(paramIndex, size) << ", " << varToLocation(parameter.first, cfg) << "\n";
         }
         else
         {
@@ -42,8 +62,8 @@ void X86Backend::emitPrologue(ControlFlowGraph *cfg, std::ostream &output)
             // depuis %rbp (16 = 7ᵉ arg, 24 = 8ᵉ, ...). On les recopie dans le cadre
             // local de la fonction pour les traiter comme des variables normales.
             int stackOffset = 16 + 8 * (paramIndex - 6);
-            output << "    movl " << stackOffset << "(%rbp), %eax\n";
-            output << "    movl %eax, " << varToLocation(parameter.first, cfg) << "\n";
+            output << "    " << movOp(size) << " " << stackOffset << "(%rbp), " << accReg(size) << "\n";
+            output << "    " << movOp(size) << " " << accReg(size) << ", " << varToLocation(parameter.first, cfg) << "\n";
         }
         paramIndex++;
     }
@@ -101,15 +121,19 @@ std::string X86Backend::parameterToLocation(int index)
 void X86Backend::emit(LoadConstant *instr, std::ostream &output)
 {
     ControlFlowGraph *cfg = instr->getBlock()->getControlFlowGraph();
-    output << "    movl $" << instr->getValue()
+    int size = cfg->getVar(instr->getDestination()).size();
+    output << "    " << movOp(size) << " $" << instr->getValue()
            << ", " << varToLocation(instr->getDestination(), cfg) << "\n";
 }
 
 void X86Backend::emit(Copy *instr, std::ostream &output)
 {
     ControlFlowGraph *cfg = instr->getBlock()->getControlFlowGraph();
-    output << "    movl " << varToLocation(instr->getSrc(), cfg) << ", %eax\n";
-    output << "    movl %eax, " << varToLocation(instr->getDestination(), cfg) << "\n";
+    // Si l'une des deux extrémités est un pointeur, on déplace 8 octets (movq)
+    // pour ne pas tronquer l'adresse ; sinon 4 octets (movl) suffisent.
+    int size = std::max(cfg->getVar(instr->getDestination()).size(), cfg->getVar(instr->getSrc()).size());
+    output << "    " << movOp(size) << " " << varToLocation(instr->getSrc(), cfg) << ", " << accReg(size) << "\n";
+    output << "    " << movOp(size) << " " << accReg(size) << ", " << varToLocation(instr->getDestination(), cfg) << "\n";
 }
 
 void X86Backend::emit(Negate *instr, std::ostream &output)
@@ -199,13 +223,15 @@ void X86Backend::emit(CallFunction *instr, std::ostream &output)
 
     for (size_t i = args.size(); i-- > 6;)
     {
-        output << "    movl " << varToLocation(args[i], cfg) << ", %eax\n";
+        int size = cfg->getVar(args[i]).size();
+        output << "    " << movOp(size) << " " << varToLocation(args[i], cfg) << ", " << accReg(size) << "\n";
         output << "    pushq %rax\n";
     }
 
     for (size_t i = 0; i < args.size() && i < 6; i++)
     {
-        output << "    movl " << varToLocation(args[i], cfg) << ", " << parameterToLocation(i) << "\n";
+        int size = cfg->getVar(args[i]).size();
+        output << "    " << movOp(size) << " " << varToLocation(args[i], cfg) << ", " << argReg(i, size) << "\n";
     }
 
     output << "    call " << instr->getFunctionName() << "\n";
@@ -214,7 +240,8 @@ void X86Backend::emit(CallFunction *instr, std::ostream &output)
     if (cleanup > 0)
         output << "    addq $" << cleanup << ", %rsp\n";
 
-    output << "    movl %eax, " << varToLocation(instr->getDestination(), cfg) << "\n";
+    int retSize = cfg->getVar(instr->getDestination()).size();
+    output << "    " << movOp(retSize) << " " << accReg(retSize) << ", " << varToLocation(instr->getDestination(), cfg) << "\n";
 }
 
 void X86Backend::emit(Equal *instr, std::ostream &output)
@@ -275,4 +302,34 @@ void X86Backend::emit(GreaterOrEqual *instr, std::ostream &output)
     output << "    setge %al\n";
     output << "    movzbl %al, %eax\n";
     output << "    movl %eax, " << varToLocation(instr->getDestination(), cfg) << "\n";
+}
+
+void X86Backend::emit(Reference *instr, std::ostream &output)
+{
+    ControlFlowGraph *cfg = instr->getBlock()->getControlFlowGraph();
+    output << "    leaq " << varToLocation(instr->getSrc(), cfg) << ", %rax\n";
+    output << "    movq %rax, " << varToLocation(instr->getDestination(), cfg) << "\n";
+}
+
+void X86Backend::emit(DereferenceRead *instr, std::ostream &output)
+{
+    ControlFlowGraph *cfg = instr->getBlock()->getControlFlowGraph();
+    // Le pointeur lui-même se charge toujours sur 8 octets (movq). En revanche
+    // la valeur lue dépend de la taille du résultat : déréférencer un T** rend
+    // un pointeur (8 octets), déréférencer un T* rend un scalaire (4 octets).
+    int size = cfg->getVar(instr->getDestination()).size();
+    output << "    movq " << varToLocation(instr->getSrc(), cfg) << ", %rax\n";
+    output << "    " << movOp(size) << " (%rax), " << accReg(size) << "\n";
+    output << "    " << movOp(size) << " " << accReg(size) << ", " << varToLocation(instr->getDestination(), cfg) << "\n";
+}
+
+void X86Backend::emit(DereferenceWrite *instr, std::ostream &output)
+{
+    ControlFlowGraph *cfg = instr->getBlock()->getControlFlowGraph();
+    // L'adresse de destination est toujours un pointeur (movq) ; la largeur de
+    // la valeur écrite suit la taille de la source (pointeur ou scalaire).
+    int size = cfg->getVar(instr->getSrc()).size();
+    output << "    " << movOp(size) << " " << varToLocation(instr->getSrc(), cfg) << ", " << accReg(size) << "\n";
+    output << "    movq " << varToLocation(instr->getDest(), cfg) << ", %rcx\n";
+    output << "    " << movOp(size) << " " << accReg(size) << ", (%rcx)\n";
 }

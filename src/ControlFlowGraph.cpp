@@ -5,21 +5,23 @@ ControlFlowGraph::ControlFlowGraph(std::string label)
 {
 }
 
-void ControlFlowGraph::addVariable(std::string name, Type type)
+void ControlFlowGraph::addVariable(std::string name, Type type, int pointerDepth)
 {
     if (variableMap.find(name) != variableMap.end())
     {
         std::cerr << "Error: variable '" << name << "' already exists in the current scope." << std::endl;
         exit(1);
     }
-    currentOffset += typeSize(type);
-    variableMap[name] = {type, currentOffset};
+    Variable variable(type, 0, pointerDepth);
+    currentOffset += variable.size();
+    variable.offset = currentOffset;
+    variableMap[name] = variable;
 }
 
-std::string ControlFlowGraph::addTempVariable(Type type)
+std::string ControlFlowGraph::addTempVariable(Type type, int pointerDepth)
 {
     std::string tempVarName = "$temp" + std::to_string(variableMap.size());
-    addVariable(tempVarName, type);
+    addVariable(tempVarName, type, pointerDepth);
     return tempVarName;
 }
 
@@ -38,10 +40,13 @@ std::string ControlFlowGraph::getOffset(std::string name)
     return std::to_string(getVar(name).offset);
 }
 
-void ControlFlowGraph::addParameter(std::string name, Type type)
+void ControlFlowGraph::addParameter(std::string name, Type type, int pointerDepth)
 {
     int index = parametersMap.size();
-    parametersMap[name] = {type, index};
+    // L'index (ordre de déclaration) est rangé dans le champ offset, relu par
+    // getParameterIndex. pointerDepth est conservé pour que size() (donc le
+    // prologue) sache si le paramètre est un pointeur (reçu en 8 octets).
+    parametersMap[name] = Variable(type, index, pointerDepth);
 }
 
 std::vector<std::pair<std::string, Variable>> ControlFlowGraph::getParameters()

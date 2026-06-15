@@ -7,8 +7,8 @@
 
 #include "Block.h"
 #include "backend/Backend.h"
-#include "struct/Type.h"
-#include "struct/Variable.h"
+#include "utils/Type.h"
+#include "utils/Variable.h"
 
 class ControlFlowGraph
 {
@@ -19,13 +19,13 @@ public:
 	void debug(std::ostream &output) const;
 
 	// variable map management
-	void addVariable(std::string name, Type type);
-	std::string addTempVariable(Type type);
+	void addVariable(std::string name, Type type, int pointerDepth = 0);
+	std::string addTempVariable(Type type, int pointerDepth = 0);
 	Variable getVar(std::string name);
 	std::string getOffset(std::string name);
 
 	// parameters map management
-	void addParameter(std::string name, Type type);
+	void addParameter(std::string name, Type type, int pointerDepth = 0);
 	std::vector<std::pair<std::string, Variable>> getParameters();
 	std::string getParameterIndex(std::string name);
 

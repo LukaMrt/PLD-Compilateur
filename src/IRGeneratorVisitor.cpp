@@ -18,6 +18,9 @@
 #include "instructions/Greater.h"
 #include "instructions/LesserOrEqual.h"
 #include "instructions/GreaterOrEqual.h"
+#include "instructions/Reference.h"
+#include "instructions/DereferenceRead.h"
+#include "instructions/DereferenceWrite.h"
 
 static std::string asString(antlrcpp::Any any)
 {
@@ -72,8 +75,10 @@ antlrcpp::Any IRGeneratorVisitor::visitFunction_parameter_declaration(ifccParser
 {
     std::string varName = ctx->IDENTIFIER()->getText();
     Type type = symbolTable.at(varName).type;
-    currentCFG->addParameter(varName, type);
-    currentCFG->addVariable(varName, type);
+    int pointerDepth = ctx->TIMES().size();
+
+    currentCFG->addParameter(varName, type, pointerDepth);
+    currentCFG->addVariable(varName, type, pointerDepth);
     return 0;
 }
 
@@ -81,7 +86,9 @@ antlrcpp::Any IRGeneratorVisitor::visitVariable_definition_without_instruction(i
 {
     std::string varName = ctx->IDENTIFIER()->getText();
     Type type = symbolTable.at(varName).type;
-    currentCFG->addVariable(varName, type);
+    int pointerDepth = ctx->TIMES().size();
+
+    currentCFG->addVariable(varName, type, pointerDepth);
 
     Block *block = currentCFG->getCurrentBlock();
     block->addInstruction(new LoadConstant(block, type, varName, 0));
@@ -92,26 +99,40 @@ antlrcpp::Any IRGeneratorVisitor::visitVariable_definition_with_instruction(ifcc
 {
     std::string varName = ctx->IDENTIFIER()->getText();
     Type type = symbolTable.at(varName).type;
-    currentCFG->addVariable(varName, type);
+    int pointerDepth = ctx->TIMES().size();
 
     std::string srcVar = asString(visit(ctx->instruction()));
+    
+    currentCFG->addVariable(varName, type, pointerDepth);
+
     Block *block = currentCFG->getCurrentBlock();
     block->addInstruction(new Copy(block, type, varName, srcVar));
     return 0;
 }
 
-antlrcpp::Any IRGeneratorVisitor::visitInstruction(ifccParser::InstructionContext *ctx)
-{
-    std::string srcVar = asString(visit(ctx->expression()));
 
+antlrcpp::Any IRGeneratorVisitor::visitAssign_instruction(ifccParser::Assign_instructionContext *ctx)
+{
+    std::string srcVar = asString(visit(ctx->instruction()));
     Block *block = currentCFG->getCurrentBlock();
-    for (auto &id : ctx->IDENTIFIER())
+
+    if (dynamic_cast<ifccParser::Pointer_lvalueContext*>(ctx->left_value()))
     {
-        std::string varName = id->getText();
-        block->addInstruction(new Copy(block, symbolTable.at(varName).type, varName, srcVar));
+        std::string addr = asString(visit(ctx->left_value()));
+        block->addInstruction(new DereferenceWrite(block, currentCFG->getVar(addr).type, addr, srcVar));
+    }
+    else
+    {
+        std::string destVar = asString(visit(ctx->left_value()));
+        block->addInstruction(new Copy(block, currentCFG->getVar(destVar).type, destVar, srcVar));
     }
 
     return srcVar;
+}
+
+antlrcpp::Any IRGeneratorVisitor::visitExpr_instruction(ifccParser::Expr_instructionContext *ctx)
+{
+    return visit(ctx->expression());
 }
 
 antlrcpp::Any IRGeneratorVisitor::visitReturn_statement(ifccParser::Return_statementContext *ctx)
@@ -168,7 +189,8 @@ antlrcpp::Any IRGeneratorVisitor::visitFunction_call(ifccParser::Function_callCo
 antlrcpp::Any IRGeneratorVisitor::visitUnary_operation(ifccParser::Unary_operationContext *ctx)
 {
     std::string srcVar = asString(visit(ctx->expression()));
-    Type type = promote(currentCFG->getVar(srcVar).type, currentCFG->getVar(srcVar).type);
+    Variable srcInfo = currentCFG->getVar(srcVar);
+    Type type = promote(srcInfo.type, srcInfo.type);
 
     int srcValue;
     if (ctx->op->getType() == ifccParser::MINUS && isConstant(srcVar, srcValue))
@@ -176,7 +198,16 @@ antlrcpp::Any IRGeneratorVisitor::visitUnary_operation(ifccParser::Unary_operati
         return emitConstant(type, -srcValue);
     }
 
-    std::string tmp = currentCFG->addTempVariable(type);
+    // Le résultat de `&x` est un pointeur (profondeur +1) ; celui de `*p` est
+    // ce que pointe p (profondeur -1). Le temporaire doit porter cette
+    // profondeur pour que le backend lui réserve 8 octets et émette movq.
+    int tmpDepth = 0;
+    if (ctx->op->getType() == ifccParser::BITWISE_AND)
+        tmpDepth = srcInfo.pointerDepth + 1;
+    else if (ctx->op->getType() == ifccParser::TIMES)
+        tmpDepth = srcInfo.pointerDepth - 1;
+
+    std::string tmp = currentCFG->addTempVariable(srcInfo.type, tmpDepth);
     Block *block = currentCFG->getCurrentBlock();
     if (ctx->op->getType() == ifccParser::MINUS)
     {
@@ -187,8 +218,39 @@ antlrcpp::Any IRGeneratorVisitor::visitUnary_operation(ifccParser::Unary_operati
         // !x  ≡  (x == 0) : à implémenter quand les instructions de comparaison seront ajoutées
         block->addInstruction(new LoadConstant(block, type, tmp, 0));
     }
+    else if (ctx->op->getType() == ifccParser::BITWISE_AND)
+    {
+        block->addInstruction(new Reference(block, type, tmp, srcVar));
+    }
+    else if (ctx->op->getType() == ifccParser::TIMES)
+    {
+        block->addInstruction(new DereferenceRead(block, type, tmp, srcVar));
+    }
 
     return tmp;
+}
+
+
+antlrcpp::Any IRGeneratorVisitor::visitPointer_lvalue(ifccParser::Pointer_lvalueContext *ctx)
+{
+    std::string inner = asString(visit(ctx->left_value()));
+
+    if (dynamic_cast<ifccParser::Pointer_lvalueContext*>(ctx->parent))
+    {
+        Variable innerInfo = currentCFG->getVar(inner);
+        // Un déréférencement intermédiaire de `**pp` produit lui-même une
+        // adresse (profondeur -1) : sans ça le pointeur serait tronqué à 4 octets.
+        std::string tmp = currentCFG->addTempVariable(innerInfo.type, innerInfo.pointerDepth - 1);
+        Block *block = currentCFG->getCurrentBlock();
+        block->addInstruction(new DereferenceRead(block, innerInfo.type, tmp, inner));
+        return tmp;
+    }
+    return inner;
+}
+
+antlrcpp::Any IRGeneratorVisitor::visitIdent_lvalue(ifccParser::Ident_lvalueContext *ctx)
+{
+    return ctx->IDENTIFIER()->getText();
 }
 
 antlrcpp::Any IRGeneratorVisitor::visitBracketed_expression(ifccParser::Bracketed_expressionContext *ctx)

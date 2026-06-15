@@ -32,4 +32,7 @@ public:
     void emit(Greater *instr, std::ostream &output) override;
     void emit(LesserOrEqual *instr, std::ostream &output) override;
     void emit(GreaterOrEqual *instr, std::ostream &output) override;
+    void emit(Reference *instr, std::ostream &output) override;
+    void emit(DereferenceRead *instr, std::ostream &output) override;
+    void emit(DereferenceWrite *instr, std::ostream &output) override;
 };

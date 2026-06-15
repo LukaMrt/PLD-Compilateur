@@ -5,7 +5,7 @@ axiom
     ;
 
 function
-    : TYPE IDENTIFIER BRACKET_OPEN function_parameters_declaration? BRACKET_CLOSE block
+    : TYPE TIMES* IDENTIFIER BRACKET_OPEN function_parameters_declaration? BRACKET_CLOSE block
     ;
 
 function_parameters_declaration
@@ -13,7 +13,7 @@ function_parameters_declaration
     ;
 
 function_parameter_declaration
-    : TYPE IDENTIFIER (EQUAL instruction)?
+    : TYPE TIMES* IDENTIFIER (EQUAL instruction)?
     ;
 
 block
@@ -22,7 +22,7 @@ block
 
 following_condition
     : statement
-    | block 
+    | block
     | SEMI_COLON
     ;
 
@@ -39,16 +39,22 @@ variable_declaration
     ;
 
 variable_definition
-    : IDENTIFIER EQUAL instruction #variable_definition_with_instruction
-    | IDENTIFIER                   #variable_definition_without_instruction
+    : TIMES* IDENTIFIER EQUAL instruction #variable_definition_with_instruction
+    | TIMES* IDENTIFIER                   #variable_definition_without_instruction
+    ;
+
+left_value
+    : TIMES left_value  #pointer_lvalue
+    | IDENTIFIER        #ident_lvalue
     ;
 
 instruction
-    : (IDENTIFIER EQUAL)* expression
+    : left_value EQUAL instruction #assign_instruction
+    | expression                   #expr_instruction
     ;
 
 expression
-    : op=(MINUS | NOT) expression                                                      # unary_operation
+    : op=(MINUS | NOT | BITWISE_AND | TIMES) expression                                # unary_operation
     | expression op=(TIMES | DIVIDE | MODULO) expression                               # multiplicative_expression
     | expression op=(PLUS | MINUS) expression                                          # additive_expression
     | expression op=(LESSER | LESSER_OR_EQUAL | GREATER_OR_EQUAL | GREATER) expression # comparison_expression
@@ -110,6 +116,7 @@ CURLY_BRACE_CLOSE : '}' ;
 
 WS    : [ \t\r\n] -> channel(HIDDEN);
 COMMENT : '/*' .*? '*/' -> skip ;
+LINE_COMMENT : '//' ~[\r\n]* -> skip ;
 CONSTANT : [0-9]+ ;
 DIRECTIVE : '#' .*? '\n' -> skip ;
 CHARACTER : '\'' . '\'' ;

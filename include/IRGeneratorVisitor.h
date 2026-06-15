@@ -4,6 +4,7 @@
 #include "generated/ifccBaseVisitor.h"
 #include "SymbolTableVisitor.h"
 #include "ControlFlowGraph.h"
+#include "utils/Variable.h"
 
 #include <map>
 #include <string>
@@ -11,7 +12,7 @@
 class IRGeneratorVisitor : public ifccBaseVisitor
 {
 public:
-    IRGeneratorVisitor(const std::map<std::string, std::map<std::string, SymbolTableVisitor::VariableInfo>> &allSymbolTables)
+    IRGeneratorVisitor(const std::map<std::string, std::map<std::string, Variable>> &allSymbolTables)
         : allSymbolTables(allSymbolTables), currentCFG(nullptr) {}
 
     ControlFlowGraph *getCurrentCFG() const { return currentCFG; }
@@ -21,7 +22,10 @@ public:
     virtual antlrcpp::Any visitReturn_statement(ifccParser::Return_statementContext *ctx) override;
     virtual antlrcpp::Any visitVariable_definition_with_instruction(ifccParser::Variable_definition_with_instructionContext *ctx) override;
     virtual antlrcpp::Any visitVariable_definition_without_instruction(ifccParser::Variable_definition_without_instructionContext *ctx) override;
-    virtual antlrcpp::Any visitInstruction(ifccParser::InstructionContext *ctx) override;
+    virtual antlrcpp::Any visitAssign_instruction(ifccParser::Assign_instructionContext *ctx) override; 
+    virtual antlrcpp::Any visitExpr_instruction(ifccParser::Expr_instructionContext *ctx) override; 
+    virtual antlrcpp::Any visitPointer_lvalue(ifccParser::Pointer_lvalueContext *ctx) override;
+    virtual antlrcpp::Any visitIdent_lvalue(ifccParser::Ident_lvalueContext *ctx) override;
     virtual antlrcpp::Any visitConstant_expression(ifccParser::Constant_expressionContext *ctx) override;
     virtual antlrcpp::Any visitCharacter_expression(ifccParser::Character_expressionContext *ctx) override;
     virtual antlrcpp::Any visitVariable_expression(ifccParser::Variable_expressionContext *ctx) override;
@@ -47,8 +51,8 @@ private:
     // Émet un LoadConstant dans un nouveau temp, l'enregistre comme constant et renvoie son nom.
     std::string emitConstant(Type type, int value);
 
-    std::map<std::string, std::map<std::string, SymbolTableVisitor::VariableInfo>> allSymbolTables;
-    std::map<std::string, SymbolTableVisitor::VariableInfo> symbolTable;
+    std::map<std::string, std::map<std::string, Variable>> allSymbolTables;
+    std::map<std::string, Variable> symbolTable;
     std::map<std::string, ControlFlowGraph *> cfgs;
     // Type de retour de chaque fonction, renseigné lors de la visite de sa définition.
     std::map<std::string, Type> functionReturnTypes;
