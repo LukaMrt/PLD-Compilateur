@@ -13,7 +13,7 @@ function_parameters_declaration
     ;
 
 function_parameter_declaration
-    : TYPE TIMES* IDENTIFIER (EQUAL instruction)?
+    : TYPE TIMES* IDENTIFIER (EQUAL expression)?
     ;
 
 block
@@ -27,11 +27,11 @@ following_condition
     ;
 
 statement
-    : instruction SEMI_COLON
+    : expression SEMI_COLON
     | variable_declaration SEMI_COLON
     | return_statement SEMI_COLON
-    | IF BRACKET_OPEN instruction BRACKET_CLOSE following_condition (ELSE following_condition)?
-    | WHILE BRACKET_OPEN instruction BRACKET_CLOSE following_condition
+    | IF BRACKET_OPEN expression BRACKET_CLOSE following_condition (ELSE following_condition)?
+    | WHILE BRACKET_OPEN expression BRACKET_CLOSE following_condition
     ;
 
 variable_declaration
@@ -39,18 +39,12 @@ variable_declaration
     ;
 
 variable_definition
-    : TIMES* IDENTIFIER EQUAL instruction #variable_definition_with_instruction
-    | TIMES* IDENTIFIER                   #variable_definition_without_instruction
+    : left_value EQUAL expression #variable_definition_with_instruction
+    | left_value                   #variable_definition_without_instruction
     ;
 
 left_value
-    : TIMES left_value  #pointer_lvalue
-    | IDENTIFIER        #ident_lvalue
-    ;
-
-instruction
-    : left_value EQUAL instruction #assign_instruction
-    | expression                   #expr_instruction
+    : TIMES* IDENTIFIER
     ;
 
 expression
@@ -62,7 +56,8 @@ expression
     | expression BITWISE_AND expression                                                # bitwise_and_expression
     | expression BITWISE_XOR expression                                                # bitwise_xor_expression
     | expression BITWISE_OR expression                                                 # bitwise_or_expression
-    | BRACKET_OPEN instruction BRACKET_CLOSE                                           # bracketed_expression
+    | BRACKET_OPEN expression BRACKET_CLOSE                                            # bracketed_expression
+    | left_value EQUAL expression                                                      # assignment_expression
     | CONSTANT                                                                         # constant_expression
     | CHARACTER                                                                        # character_expression
     | IDENTIFIER                                                                       # variable_expression
