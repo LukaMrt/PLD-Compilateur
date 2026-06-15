@@ -1,3 +1,10 @@
+// cas 6 : paramètre pointeur — écriture et lecture au travers du paramètre,
+// et passage d'une adresse (&w) en argument
+int write_through(int *ptr) {
+    *ptr = 99;             // écrit via le paramètre pointeur
+    return *ptr;           // relit via le paramètre pointeur -> 99
+}
+
 int main() {
     int a = 10;
 
@@ -25,9 +32,14 @@ int main() {
     // cas 5 : déréférencement des deux côtés (*p = *q)
     int b = 3;
     int *r = &b;
-    *r = *q;               // b = via_q = 10, mais q pointait sur a qui vaut 7 maintenant
+    *r = *q;               // *q relit a, qui vaut 7 maintenant -> b == 7
     int apres_copie = b;   // apres_copie == 7
 
-    return via_q + lue + apres_ecriture + double_deref + apres_double + apres_copie;
-    // 10 + 10 + 42 + 42 + 7 + 7 = 118
+    // cas 6 : appel d'une fonction avec un paramètre pointeur
+    int w = 5;
+    int renvoye = write_through(&w); // renvoye == 99, et w vaut 99 ensuite
+
+    return via_q + lue + apres_ecriture + double_deref + apres_double + apres_copie
+         + renvoye + w;
+    // 10 + 10 + 42 + 42 + 7 + 7 + 99 + 99 = 316  (code de sortie 316 % 256 = 60)
 }

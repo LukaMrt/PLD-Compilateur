@@ -77,7 +77,7 @@ antlrcpp::Any IRGeneratorVisitor::visitFunction_parameter_declaration(ifccParser
     Type type = symbolTable.at(varName).type;
     int pointerDepth = ctx->TIMES().size();
 
-    currentCFG->addParameter(varName, type);
+    currentCFG->addParameter(varName, type, pointerDepth);
     currentCFG->addVariable(varName, type, pointerDepth);
     return 0;
 }

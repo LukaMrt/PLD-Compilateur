@@ -30,6 +30,15 @@ namespace
 {
     const char *movOp(int size) { return size == 8 ? "movq" : "movl"; }
     const char *accReg(int size) { return size == 8 ? "%rax" : "%eax"; }
+
+    // Registre de passage d'argument System V selon l'index (0-5) et la largeur :
+    // 64 bits pour un pointeur, 32 bits pour un scalaire.
+    const char *argReg(int index, int size)
+    {
+        static const char *regs64[] = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
+        static const char *regs32[] = {"%edi", "%esi", "%edx", "%ecx", "%r8d", "%r9d"};
+        return size == 8 ? regs64[index] : regs32[index];
+    }
 }
 
 void X86Backend::emitPrologue(ControlFlowGraph *cfg, std::ostream &output)
@@ -42,9 +51,10 @@ void X86Backend::emitPrologue(ControlFlowGraph *cfg, std::ostream &output)
     int paramIndex = 0;
     for (auto parameter : cfg->getParameters())
     {
+        int size = parameter.second.size();
         if (paramIndex < 6)
         {
-            output << "    movl " << parameterToLocation(paramIndex) << ", " << varToLocation(parameter.first, cfg) << "\n";
+            output << "    " << movOp(size) << " " << argReg(paramIndex, size) << ", " << varToLocation(parameter.first, cfg) << "\n";
         }
         else
         {
@@ -52,8 +62,8 @@ void X86Backend::emitPrologue(ControlFlowGraph *cfg, std::ostream &output)
             // depuis %rbp (16 = 7ᵉ arg, 24 = 8ᵉ, ...). On les recopie dans le cadre
             // local de la fonction pour les traiter comme des variables normales.
             int stackOffset = 16 + 8 * (paramIndex - 6);
-            output << "    movl " << stackOffset << "(%rbp), %eax\n";
-            output << "    movl %eax, " << varToLocation(parameter.first, cfg) << "\n";
+            output << "    " << movOp(size) << " " << stackOffset << "(%rbp), " << accReg(size) << "\n";
+            output << "    " << movOp(size) << " " << accReg(size) << ", " << varToLocation(parameter.first, cfg) << "\n";
         }
         paramIndex++;
     }
@@ -213,13 +223,15 @@ void X86Backend::emit(CallFunction *instr, std::ostream &output)
 
     for (size_t i = args.size(); i-- > 6;)
     {
-        output << "    movl " << varToLocation(args[i], cfg) << ", %eax\n";
+        int size = cfg->getVar(args[i]).size();
+        output << "    " << movOp(size) << " " << varToLocation(args[i], cfg) << ", " << accReg(size) << "\n";
         output << "    pushq %rax\n";
     }
 
     for (size_t i = 0; i < args.size() && i < 6; i++)
     {
-        output << "    movl " << varToLocation(args[i], cfg) << ", " << parameterToLocation(i) << "\n";
+        int size = cfg->getVar(args[i]).size();
+        output << "    " << movOp(size) << " " << varToLocation(args[i], cfg) << ", " << argReg(i, size) << "\n";
     }
 
     output << "    call " << instr->getFunctionName() << "\n";
@@ -228,7 +240,8 @@ void X86Backend::emit(CallFunction *instr, std::ostream &output)
     if (cleanup > 0)
         output << "    addq $" << cleanup << ", %rsp\n";
 
-    output << "    movl %eax, " << varToLocation(instr->getDestination(), cfg) << "\n";
+    int retSize = cfg->getVar(instr->getDestination()).size();
+    output << "    " << movOp(retSize) << " " << accReg(retSize) << ", " << varToLocation(instr->getDestination(), cfg) << "\n";
 }
 
 void X86Backend::emit(Equal *instr, std::ostream &output)

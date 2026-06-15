@@ -25,7 +25,7 @@ public:
 	std::string getOffset(std::string name);
 
 	// parameters map management
-	void addParameter(std::string name, Type type);
+	void addParameter(std::string name, Type type, int pointerDepth = 0);
 	std::vector<std::pair<std::string, Variable>> getParameters();
 	std::string getParameterIndex(std::string name);
 

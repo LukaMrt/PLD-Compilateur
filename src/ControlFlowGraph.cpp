@@ -40,10 +40,13 @@ std::string ControlFlowGraph::getOffset(std::string name)
     return std::to_string(getVar(name).offset);
 }
 
-void ControlFlowGraph::addParameter(std::string name, Type type)
+void ControlFlowGraph::addParameter(std::string name, Type type, int pointerDepth)
 {
     int index = parametersMap.size();
-    parametersMap[name] = Variable(type, 0);
+    // L'index (ordre de déclaration) est rangé dans le champ offset, relu par
+    // getParameterIndex. pointerDepth est conservé pour que size() (donc le
+    // prologue) sache si le paramètre est un pointeur (reçu en 8 octets).
+    parametersMap[name] = Variable(type, index, pointerDepth);
 }
 
 std::vector<std::pair<std::string, Variable>> ControlFlowGraph::getParameters()
