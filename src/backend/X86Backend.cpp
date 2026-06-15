@@ -73,6 +73,12 @@ void X86Backend::emitJump(Block *block, std::ostream &output)
     output << "    jmp " << block->getLabel() << "\n";
 }
 
+void X86Backend::emitFalseJump(Block *block, std::ostream &output)
+{
+    output << "    cmpl $0, %eax\n";
+    output << "    je " << block->getLabel() << "\n";
+}
+
 std::string X86Backend::varToLocation(std::string name, ControlFlowGraph *cfg)
 {
     return std::to_string(-cfg->getVar(name).offset) + "(%rbp)";

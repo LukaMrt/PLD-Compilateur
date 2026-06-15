@@ -31,6 +31,7 @@ public:
 
     virtual void emitBlockLabel(Block *block, std::ostream &output) = 0;
     virtual void emitJump(Block *block, std::ostream &output) = 0;
+    virtual void emitFalseJump(Block *block, std::ostream &output) = 0;
     virtual void emitPrologue(ControlFlowGraph *cfg, std::ostream &output) = 0;
     virtual void emitEpilogue(ControlFlowGraph *cfg, std::ostream &output) = 0;
 
