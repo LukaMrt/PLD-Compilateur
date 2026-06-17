@@ -22,6 +22,14 @@
 #include "instructions/DereferenceRead.h"
 #include "instructions/DereferenceWrite.h"
 
+#include <set>
+
+// Fonctions de la libc tolérées sans définition dans le fichier source.
+static const std::set<std::string> libcFunctions = {
+    "putchar",
+    "getchar",
+};
+
 static std::string asString(antlrcpp::Any any)
 {
     return std::any_cast<std::string>(any);
@@ -49,24 +57,42 @@ std::string IRGeneratorVisitor::emitConstant(Type type, int value)
 
 antlrcpp::Any IRGeneratorVisitor::visitFunction(ifccParser::FunctionContext *ctx)
 {
-    std::string funcName = ctx->IDENTIFIER()->getText();
-    symbolTable = allSymbolTables.at(funcName);
+    currentFunction = ctx->IDENTIFIER()->getText();
     Type returnType = stringToType(ctx->TYPE()->getText());
-    functionReturnTypes[funcName] = returnType;
-    cfgs[funcName] = new ControlFlowGraph(funcName);
-    currentCFG = cfgs[funcName];
+    functionReturnTypes[currentFunction] = returnType;
+    cfgs[currentFunction] = new ControlFlowGraph(currentFunction);
+    currentCFG = cfgs[currentFunction];
     currentCFG->addVariable("$return", returnType);
 
     // Le bloc de sortie est créé ici mais n'est pas ajouté à la liste des blocs ;
     // il est émis séparément par generateASM juste avant l'épilogue.
-    Block *exitBlock = new Block(currentCFG, funcName + "_exit");
+    Block *exitBlock = new Block(currentCFG, currentFunction + "_exit");
     currentCFG->setExitBlock(exitBlock);
 
-    Block *block = new Block(currentCFG, funcName + "_entry");
+    Block *block = new Block(currentCFG, currentFunction + "_entry");
     currentCFG->addBlock(block);
     block->addInstruction(new LoadConstant(block, returnType, "$return", 0));
 
-    visitChildren(ctx);
+    if (functionTable.find(currentFunction) != functionTable.end())
+    {
+        std::cerr << "Error: function '" << currentFunction << "' is already defined." << std::endl;
+        exit(1);
+    }
+    
+    // Initialize with a vector containing one empty map (first scope for function parameters and local variables)
+    allSymbolTables[currentFunction] = {{}};
+    functionTable[currentFunction] = {stringToType(ctx->TYPE()->getText()), {}};
+
+    this->visitChildren(ctx);
+
+    // Print all unused variables collected during function processing
+    for (const auto &unusedVar : unusedVariables)
+    {
+        if (unusedVar.first == currentFunction)
+        {
+            std::cerr << "Warning: variable '" << unusedVar.second << "' defined but never used." << std::endl;
+        }
+    }
 
     return 0;
 }
@@ -74,8 +100,12 @@ antlrcpp::Any IRGeneratorVisitor::visitFunction(ifccParser::FunctionContext *ctx
 antlrcpp::Any IRGeneratorVisitor::visitFunction_parameter_declaration(ifccParser::Function_parameter_declarationContext *ctx)
 {
     std::string varName = ctx->IDENTIFIER()->getText();
-    Type type = symbolTable.at(varName).type;
     int pointerDepth = ctx->TIMES().size();
+    
+    Type type = stringToType(ctx->TYPE()->getText());
+
+    this->declareVariable(varName, type, pointerDepth);
+    functionTable[currentFunction].parameterTypes.push_back(type);
 
     currentCFG->addParameter(varName, type, pointerDepth);
     currentCFG->addVariable(varName, type, pointerDepth);
@@ -85,9 +115,14 @@ antlrcpp::Any IRGeneratorVisitor::visitFunction_parameter_declaration(ifccParser
 antlrcpp::Any IRGeneratorVisitor::visitVariable_definition_without_instruction(ifccParser::Variable_definition_without_instructionContext *ctx)
 {
     std::string varName = ctx->left_value()->IDENTIFIER()->getText();
-    Type type = symbolTable.at(varName).type;
+    // Type type = symbolTable.at(varName).type;
     int pointerDepth = ctx->left_value()->TIMES().size();
 
+    auto declaration = dynamic_cast<ifccParser::Variable_declarationContext *>(ctx->parent);
+
+    this->declareVariable(varName, stringToType(declaration->TYPE()->getText()), pointerDepth);
+
+    Type type = findVariable(varName)->type;
     currentCFG->addVariable(varName, type, pointerDepth);
 
     Block *block = currentCFG->getCurrentBlock();
@@ -98,16 +133,26 @@ antlrcpp::Any IRGeneratorVisitor::visitVariable_definition_without_instruction(i
 antlrcpp::Any IRGeneratorVisitor::visitVariable_definition_with_instruction(ifccParser::Variable_definition_with_instructionContext *ctx)
 {
     std::string varName = ctx->left_value()->IDENTIFIER()->getText();
-    Type type = symbolTable.at(varName).type;
+    // Type type = stringToType(ctx->TYPE()->getText());
+    
     int pointerDepth = ctx->left_value()->TIMES().size();
 
-    std::string srcVar = asString(visit(ctx->expression()));
+    // Le TYPE n'est pas sur le variable_definition mais sur son parent
+    // variable_declaration ('int' partagé par 'int a, b, c;').
+    auto declaration = dynamic_cast<ifccParser::Variable_declarationContext *>(ctx->parent);
+
+    this->declareVariable(varName, stringToType(declaration->TYPE()->getText()), pointerDepth);
+
+    auto vis = visit(ctx->expression());
+    std::string srcVar = asString(vis);
+
+    Type type = findVariable(varName)->type;
 
     currentCFG->addVariable(varName, type, pointerDepth);
 
     Block *block = currentCFG->getCurrentBlock();
     block->addInstruction(new Copy(block, type, varName, srcVar));
-    return 0;
+    return visit(ctx->expression());
 }
 
 
@@ -162,7 +207,10 @@ antlrcpp::Any IRGeneratorVisitor::visitCharacter_expression(ifccParser::Characte
 
 antlrcpp::Any IRGeneratorVisitor::visitVariable_expression(ifccParser::Variable_expressionContext *ctx)
 {
-    return ctx->IDENTIFIER()->getText();
+    std::string varName = ctx->IDENTIFIER()->getText();
+    this->useVariable(varName);
+
+    return varName;
 }
 
 antlrcpp::Any IRGeneratorVisitor::visitFunction_call(ifccParser::Function_callContext *ctx)
@@ -175,8 +223,29 @@ antlrcpp::Any IRGeneratorVisitor::visitFunction_call(ifccParser::Function_callCo
         args.push_back(asString(visit(expression)));
     }
 
-    auto it = functionReturnTypes.find(funcName);
-    Type type = it != functionReturnTypes.end() ? it->second : Type::INT32;
+    auto it = functionTable.find(funcName);
+    if (it == functionTable.end() && libcFunctions.find(funcName) == libcFunctions.end())
+    {
+        std::cerr << "Error: function '" << funcName << "' is not defined." << std::endl;
+        exit(1);
+    }
+
+    // L'arité n'est vérifiée que pour les fonctions définies localement
+    // (la signature des fonctions libc n'est pas connue).
+    if (it != functionTable.end())
+    {
+        size_t expected = it->second.parameterTypes.size();
+        size_t actual = ctx->expression().size();
+        if (expected != actual)
+        {
+            std::cerr << "Error: function '" << funcName << "' expects " << expected
+                      << " argument(s) but " << actual << " were given." << std::endl;
+            exit(1);
+        }
+    }
+
+    auto it_ = functionReturnTypes.find(funcName);
+    Type type = it_ != functionReturnTypes.end() ? it_->second : Type::INT32;
     std::string tmp = currentCFG->addTempVariable(type);
     Block *block = currentCFG->getCurrentBlock();
     block->addInstruction(new CallFunction(block, type, tmp, funcName, args));
@@ -582,4 +651,25 @@ antlrcpp::Any IRGeneratorVisitor::visitComparison_expression(ifccParser::Compari
     }
 
     return tmp;
+}
+
+antlrcpp::Any IRGeneratorVisitor::visitLeft_value(ifccParser::Left_valueContext *ctx)
+{
+    this->checkDeclared(ctx->IDENTIFIER()->getText());
+    return visitChildren(ctx);
+}
+
+antlrcpp::Any IRGeneratorVisitor::visitBlock(ifccParser::BlockContext *ctx)
+{
+    pushScope(); // Push a new scope for the block
+
+    // Visit all statements in the block
+    for (auto statement : ctx->statement())
+    {
+        visit(statement);
+    }
+
+    popScope(); // Pop the scope after finishing the block
+
+    return 0;
 }

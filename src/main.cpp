@@ -66,18 +66,15 @@ int main(int argn, const char **argv)
         exit(1);
     }
 
-    SymbolTableVisitor symbolTableVisitor;
-    symbolTableVisitor.visit(tree);
+    IRGeneratorVisitor irVisitor;
+    irVisitor.visit(tree);
 
-    auto functionTable = symbolTableVisitor.getFunctionTable();
+    auto functionTable = irVisitor.getFunctionTable();
     if (functionTable.find("main") == functionTable.end())
     {
         std::cerr << "error: no 'main' function defined" << std::endl;
         exit(1);
     }
-
-    IRGeneratorVisitor irVisitor(symbolTableVisitor.getAllSymbolTables());
-    irVisitor.visit(tree);
 
     if (irVisitor.getDeadBlockCount() > 0)
         std::cerr << "warning: " << irVisitor.getDeadBlockCount() << " unreachable code block(s) detected\n";

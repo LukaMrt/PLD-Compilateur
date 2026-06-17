@@ -1,4 +1,4 @@
-#include "SymbolTableVisitor.h"
+/*#include "SymbolTableVisitor.h"
 
 #include <set>
 
@@ -8,6 +8,7 @@ static const std::set<std::string> libcFunctions = {
     "getchar",
 };
 
+// ok
 antlrcpp::Any SymbolTableVisitor::visitFunction(ifccParser::FunctionContext *ctx)
 {
     currentFunction = ctx->IDENTIFIER()->getText();
@@ -16,16 +17,18 @@ antlrcpp::Any SymbolTableVisitor::visitFunction(ifccParser::FunctionContext *ctx
         std::cerr << "Error: function '" << currentFunction << "' is already defined." << std::endl;
         exit(1);
     }
-    allSymbolTables[currentFunction] = {};
+    // Initialize with a vector containing one empty map (first scope for function parameters and local variables)
+    allSymbolTables[currentFunction] = {{}};
     functionTable[currentFunction] = {stringToType(ctx->TYPE()->getText()), {}};
 
     this->visitChildren(ctx);
 
-    for (auto &entry : currentTable())
+    // Print all unused variables collected during function processing
+    for (const auto &unusedVar : unusedVariables)
     {
-        if (!entry.second.used)
+        if (unusedVar.first == currentFunction)
         {
-            std::cerr << "Warning: variable '" << entry.first << "' defined but never used." << std::endl;
+            std::cerr << "Warning: variable '" << unusedVar.second << "' defined but never used." << std::endl;
         }
     }
 
@@ -104,3 +107,4 @@ antlrcpp::Any SymbolTableVisitor::visitFunction_call(ifccParser::Function_callCo
 
     return visitChildren(ctx);
 }
+*/

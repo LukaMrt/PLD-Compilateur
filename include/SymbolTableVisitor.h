@@ -1,4 +1,4 @@
-#pragma once
+/*#pragma once
 
 #include "antlr4-runtime.h"
 #include "generated/ifccBaseVisitor.h"
@@ -25,22 +25,61 @@ public:
         virtual antlrcpp::Any visitLeft_value(ifccParser::Left_valueContext *ctx) override;
         virtual antlrcpp::Any visitVariable_expression(ifccParser::Variable_expressionContext *ctx) override;
         virtual antlrcpp::Any visitFunction_call(ifccParser::Function_callContext *ctx) override;
-        std::map<std::string, Variable> getSymbolTable(const std::string &funcName) const { return allSymbolTables.at(funcName); }
-        std::map<std::string, std::map<std::string, Variable>> getAllSymbolTables() const { return allSymbolTables; }
+        std::vector<std::map<std::string, Variable>> getSymbolTable(const std::string &funcName) const { return allSymbolTables.at(funcName); }
+        std::map<std::string, std::vector<std::map<std::string, Variable>>> getAllSymbolTables() const { return allSymbolTables; }
         std::map<std::string, FunctionInfo> getFunctionTable() const { return functionTable; }
+        std::vector<std::pair<std::string, std::string>> getUnusedVariables() const { return unusedVariables; }
 
 private:
-        std::map<std::string, std::map<std::string, Variable>> allSymbolTables;
+        std::map<std::string, std::vector<std::map<std::string, Variable>>> allSymbolTables;
         std::map<std::string, FunctionInfo> functionTable;
+        std::vector<std::pair<std::string, std::string>> unusedVariables; // (function_name, variable_name)
         std::string currentFunction;
 
-        
+        // Scope management helpers
+        std::map<std::string, Variable> &currentScope() { return allSymbolTables[currentFunction].back(); }
 
-        std::map<std::string, Variable> &currentTable() { return allSymbolTables[currentFunction]; }
+        Variable *findVariable(const std::string &varName)
+        {
+                // Search from the innermost scope (end) to the outermost scope (beginning)
+                auto &scopes = allSymbolTables[currentFunction];
+                for (auto it = scopes.rbegin(); it != scopes.rend(); ++it)
+                {
+                        auto found = it->find(varName);
+                        if (found != it->end())
+                        {
+                                return &found->second;
+                        }
+                }
+                return nullptr;
+        }
+
+        void pushScope()
+        {
+                allSymbolTables[currentFunction].push_back(std::map<std::string, Variable>());
+        }
+
+        void popScope()
+        {
+                // Check for unused variables in the current scope before popping
+                for (auto &entry : currentScope())
+                {
+                        if (!entry.second.used)
+                        {
+                                unusedVariables.push_back({currentFunction, entry.first});
+                        }
+                }
+                allSymbolTables[currentFunction].pop_back();
+        }
+
+        bool isDeclaredInCurrentScope(const std::string &varName)
+        {
+                return currentScope().find(varName) != currentScope().end();
+        }
 
         bool isDeclared(const std::string &varName)
         {
-                return currentTable().find(varName) != currentTable().end();
+                return findVariable(varName) != nullptr;
         }
 
         void declareVariable(const std::string &varName, Type type, int pointerDepth = 0)
@@ -50,12 +89,12 @@ private:
                         std::cerr << "Error: variable '" << varName << "' declared void." << std::endl;
                         exit(1);
                 }
-                if (isDeclared(varName))
+                if (isDeclaredInCurrentScope(varName))
                 {
                         std::cerr << "Error: variable '" << varName << "' is already declared." << std::endl;
                         exit(1);
                 }
-                currentTable()[varName] = Variable(type, pointerDepth);
+                currentScope()[varName] = Variable(type, pointerDepth);
         }
 
         void checkDeclared(const std::string &varName)
@@ -70,6 +109,11 @@ private:
         void useVariable(const std::string &varName)
         {
                 checkDeclared(varName);
-                currentTable()[varName].used = true;
+                Variable *var = findVariable(varName);
+                if (var != nullptr)
+                {
+                        var->used = true;
+                }
         }
 };
+*/
