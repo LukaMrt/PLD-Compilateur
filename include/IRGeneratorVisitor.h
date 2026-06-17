@@ -8,6 +8,7 @@
 
 #include <map>
 #include <string>
+#include <vector>
 
 class IRGeneratorVisitor : public ifccBaseVisitor
 {
@@ -37,6 +38,9 @@ public:
     virtual antlrcpp::Any visitStatement(ifccParser::StatementContext *ctx) override;
     virtual antlrcpp::Any visitEqual_expression(ifccParser::Equal_expressionContext *ctx) override;
     virtual antlrcpp::Any visitComparison_expression(ifccParser::Comparison_expressionContext *ctx) override;
+    virtual antlrcpp::Any visitTable_definition(ifccParser::Table_definitionContext *ctx) override;
+    virtual antlrcpp::Any visitTable_expression_read_value(ifccParser::Table_expression_read_valueContext *ctx) override;
+    virtual antlrcpp::Any visitTable_expression_load_values(ifccParser::Table_expression_load_valuesContext *ctx) override;
 
 private:
     // Optimisation par pliage de constantes : associe un nom de variable temporaire
@@ -47,6 +51,7 @@ private:
     bool isConstant(const std::string &v, int &out) const;
     // Émet un LoadConstant dans un nouveau temp, l'enregistre comme constant et renvoie son nom.
     std::string emitConstant(Type type, int value);
+    std::string emitTable(Type type, const std::vector<std::string> &values);
 
     // Calcule l'adresse cible d'un lvalue : n-1 DereferenceRead pour n étoiles,
     // et renvoie le nom du temporaire (ou de la variable) contenant l'adresse.

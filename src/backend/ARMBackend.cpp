@@ -110,11 +110,11 @@ void ARMBackend::emitFalseJump(Block *block, std::ostream &output)
     output << "    beq " << block->getLabel() << "\n";
 }
 
-std::string ARMBackend::varToLocation(std::string name, ControlFlowGraph *cfg)
+std::string ARMBackend::varToLocation(std::string name, ControlFlowGraph *cfg, int offset)
 {
     // Locales adressées relativement au frame pointer, sous celui-ci : [x29, #-N].
     // (Offsets limités à la portée de ldur/sub, suffisant pour de petits cadres.)
-    return "[x29, #-" + std::to_string(cfg->getVar(name).offset) + "]";
+    return "[x29, #-" + std::to_string(cfg->getVar(name).offset + offset) + "]";
 }
 
 std::string ARMBackend::parameterToLocation(int index)

@@ -20,6 +20,7 @@ public:
 
 	// variable map management
 	void addVariable(std::string name, Type type, int pointerDepth = 0);
+	void addVariable(std::string name, Type type, int pointerDepth, int array_size);
 	std::string addTempVariable(Type type, int pointerDepth = 0);
 	Variable getVar(std::string name);
 	std::string getOffset(std::string name);

@@ -22,6 +22,8 @@
 #include "instructions/DereferenceRead.h"
 #include "instructions/DereferenceWrite.h"
 
+#include <vector>
+
 static std::string asString(antlrcpp::Any any)
 {
     return std::any_cast<std::string>(any);
@@ -44,6 +46,17 @@ std::string IRGeneratorVisitor::emitConstant(Type type, int value)
     Block *block = currentCFG->getCurrentBlock();
     block->addInstruction(new LoadConstant(block, type, tmp, value));
     knownConstants[tmp] = value;
+    return tmp;
+}
+
+std::string IRGeneratorVisitor::emitTable(Type type, const std::vector<std::string> &values)
+{
+    std::string tmp = currentCFG->addTempVariable(type, 1);
+    Block *block = currentCFG->getCurrentBlock();
+    for (size_t i = 0; i < values.size(); ++i)
+    {
+        block->addInstruction(new DereferenceWrite(block, type, tmp, values[i], i * typeSize(type)));
+    }
     return tmp;
 }
 
@@ -92,7 +105,7 @@ antlrcpp::Any IRGeneratorVisitor::visitVariable_definition_without_instruction(i
 
     Block *block = currentCFG->getCurrentBlock();
     block->addInstruction(new LoadConstant(block, type, varName, 0));
-    return 0;
+    return 0;   
 }
 
 antlrcpp::Any IRGeneratorVisitor::visitVariable_definition_with_instruction(ifccParser::Variable_definition_with_instructionContext *ctx)
@@ -110,6 +123,35 @@ antlrcpp::Any IRGeneratorVisitor::visitVariable_definition_with_instruction(ifcc
     return 0;
 }
 
+antlrcpp::Any IRGeneratorVisitor::visitTable_definition(ifccParser::Table_definitionContext *ctx)
+{
+    std::string varName = ctx->IDENTIFIER()->getText();
+    Type type = symbolTable.at(varName).type;
+    int pointerDepth = 1; // Les tableaux sont toujours des pointeurs
+    int size = ctx->CONSTANT() ? std::stoi(ctx->CONSTANT()->getText()) : -1;
+    int size_table_init = -1;
+    if (ctx->table_init())
+    {
+        auto tableInit = dynamic_cast<ifccParser::Table_expression_load_valuesContext *>(ctx->table_init());
+        if (tableInit)
+        {
+            size_table_init = tableInit->expression().size();
+        }
+    }
+    if (size_table_init != -1 && size != -1 && size_table_init != size)
+    {
+        std::cerr << "Error: table '" << varName << "' has size " << size
+                  << " but is initialized with " << size_table_init << " values." << std::endl;
+        exit(1);
+    }
+
+    int array_size = (size != -1) ? size : size_table_init;
+    currentCFG->addVariable(varName, type, pointerDepth, array_size);
+
+    Block *block = currentCFG->getCurrentBlock();
+    block->addInstruction(new LoadConstant(block, type, varName, 0));
+    return 0;
+}
 
 antlrcpp::Any IRGeneratorVisitor::visitAssignment(ifccParser::AssignmentContext *ctx)
 {
@@ -163,6 +205,27 @@ antlrcpp::Any IRGeneratorVisitor::visitCharacter_expression(ifccParser::Characte
 antlrcpp::Any IRGeneratorVisitor::visitVariable_expression(ifccParser::Variable_expressionContext *ctx)
 {
     return ctx->IDENTIFIER()->getText();
+}
+
+antlrcpp::Any IRGeneratorVisitor::visitTable_expression_read_value(ifccParser::Table_expression_read_valueContext *ctx)
+{
+    std::string tableName = ctx->IDENTIFIER()->getText();
+
+    std::string indexVar = asString(visit(ctx->expression()));
+    Block *block = currentCFG->getCurrentBlock();
+    std::string tmp = currentCFG->addTempVariable(currentCFG->getVar(tableName).type);
+    block->addInstruction(new DereferenceRead(block, currentCFG->getVar(tableName).type, tmp, tableName, std::stoi(indexVar) * typeSize(currentCFG->getVar(tableName).type)));
+    return tmp;
+}
+
+antlrcpp::Any IRGeneratorVisitor::visitTable_expression_load_values(ifccParser::Table_expression_load_valuesContext *ctx)
+{
+    std::vector<std::string> values;
+    for (auto expression : ctx->expression())
+    {
+        values.push_back(asString(visit(expression)));
+    }
+    return emitTable(Type::INT32, values);
 }
 
 antlrcpp::Any IRGeneratorVisitor::visitFunction_call(ifccParser::Function_callContext *ctx)

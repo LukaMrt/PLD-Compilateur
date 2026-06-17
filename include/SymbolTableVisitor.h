@@ -43,7 +43,7 @@ private:
                 return currentTable().find(varName) != currentTable().end();
         }
 
-        void declareVariable(const std::string &varName, Type type, int pointerDepth = 0)
+        void declareVariable(const std::string &varName, Type type, int pointerDepth = 0, int array_size = -1)
         {
                 if (type == Type::VOID)
                 {
@@ -55,7 +55,7 @@ private:
                         std::cerr << "Error: variable '" << varName << "' is already declared." << std::endl;
                         exit(1);
                 }
-                currentTable()[varName] = Variable(type, pointerDepth);
+                currentTable()[varName] = Variable(type, pointerDepth, array_size);
         }
 
         void checkDeclared(const std::string &varName)

@@ -12,7 +12,30 @@ void ControlFlowGraph::addVariable(std::string name, Type type, int pointerDepth
         std::cerr << "Error: variable '" << name << "' already exists in the current scope." << std::endl;
         exit(1);
     }
-    Variable variable(type, 0, pointerDepth);
+    Variable variable;
+    variable.type = type;
+    variable.offset = 0;
+    variable.pointerDepth = pointerDepth;
+    variable.used = false;
+    variable.array_size = -1;
+    currentOffset += variable.size();
+    variable.offset = currentOffset;
+    variableMap[name] = variable;
+}
+
+void ControlFlowGraph::addVariable(std::string name, Type type, int pointerDepth, int array_size)
+{
+    if (variableMap.find(name) != variableMap.end())
+    {
+        std::cerr << "Error: variable '" << name << "' already exists in the current scope." << std::endl;
+        exit(1);
+    }
+    Variable variable;
+    variable.type = type;
+    variable.offset = 0;
+    variable.pointerDepth = pointerDepth;
+    variable.used = false;
+    variable.array_size = array_size;
     currentOffset += variable.size();
     variable.offset = currentOffset;
     variableMap[name] = variable;
@@ -46,7 +69,13 @@ void ControlFlowGraph::addParameter(std::string name, Type type, int pointerDept
     // L'index (ordre de déclaration) est rangé dans le champ offset, relu par
     // getParameterIndex. pointerDepth est conservé pour que size() (donc le
     // prologue) sache si le paramètre est un pointeur (reçu en 8 octets).
-    parametersMap[name] = Variable(type, index, pointerDepth);
+    Variable variable;
+    variable.type = type;
+    variable.offset = index;
+    variable.pointerDepth = pointerDepth;
+    variable.used = false;
+    variable.array_size = -1;
+    parametersMap[name] = variable;
 }
 
 std::vector<std::pair<std::string, Variable>> ControlFlowGraph::getParameters()

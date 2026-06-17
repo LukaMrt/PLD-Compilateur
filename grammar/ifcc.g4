@@ -5,7 +5,7 @@ axiom
     ;
 
 function
-    : TYPE TIMES* IDENTIFIER BRACKET_OPEN function_parameters_declaration? BRACKET_CLOSE block
+    : TYPE TIMES* IDENTIFIER PARENTHESES_OPEN function_parameters_declaration? PARENTHESES_CLOSE block
     ;
 
 function_parameters_declaration
@@ -31,8 +31,8 @@ statement
     | expression SEMI_COLON
     | variable_declaration SEMI_COLON
     | return_statement SEMI_COLON
-    | IF BRACKET_OPEN expression BRACKET_CLOSE following_condition (ELSE following_condition)?
-    | WHILE BRACKET_OPEN expression BRACKET_CLOSE following_condition
+    | IF PARENTHESES_OPEN expression PARENTHESES_CLOSE following_condition (ELSE following_condition)?
+    | WHILE PARENTHESES_OPEN expression PARENTHESES_CLOSE following_condition
     ;
 
 variable_declaration
@@ -40,12 +40,18 @@ variable_declaration
     ;
 
 variable_definition
-    : left_value EQUAL expression #variable_definition_with_instruction
+    : IDENTIFIER BRACKET_OPEN CONSTANT? BRACKET_CLOSE (EQUAL table_init)? #table_definition
+    | left_value EQUAL expression #variable_definition_with_instruction
     | left_value                   #variable_definition_without_instruction
+    ;
+
+table_init
+    : CURLY_BRACE_OPEN expression (COMMA expression)* CURLY_BRACE_CLOSE                # table_expression_load_values
     ;
 
 left_value
     : TIMES* IDENTIFIER
+    | IDENTIFIER BRACKET_OPEN expression BRACKET_CLOSE
     ;
 
 assignment
@@ -61,11 +67,12 @@ expression
     | expression BITWISE_AND expression                                                # bitwise_and_expression
     | expression BITWISE_XOR expression                                                # bitwise_xor_expression
     | expression BITWISE_OR expression                                                 # bitwise_or_expression
-    | BRACKET_OPEN expression BRACKET_CLOSE                                            # bracketed_expression
+    | PARENTHESES_OPEN expression PARENTHESES_CLOSE                                    # bracketed_expression
     | CONSTANT                                                                         # constant_expression
     | CHARACTER                                                                        # character_expression
     | IDENTIFIER                                                                       # variable_expression
-    | IDENTIFIER BRACKET_OPEN (expression (COMMA expression)*)? BRACKET_CLOSE          # function_call
+    | IDENTIFIER BRACKET_OPEN expression BRACKET_CLOSE                                 # table_expression_read_value
+    | IDENTIFIER PARENTHESES_OPEN (expression (COMMA expression)*)? PARENTHESES_CLOSE  # function_call
     ;
 
 return_statement
@@ -108,10 +115,13 @@ LESSER_OR_EQUAL  : '<=' ;
 GREATER_OR_EQUAL : '>=' ;
 
 // Delimiters
-BRACKET_OPEN      : '(' ;
-BRACKET_CLOSE     : ')' ;
+PARENTHESES_OPEN      : '(' ;
+PARENTHESES_CLOSE     : ')' ;
 CURLY_BRACE_OPEN  : '{' ;
 CURLY_BRACE_CLOSE : '}' ;
+BRACKET_OPEN      : '[' ;
+BRACKET_CLOSE     : ']' ;
+
 
 WS    : [ \t\r\n] -> channel(HIDDEN);
 COMMENT : '/*' .*? '*/' -> skip ;

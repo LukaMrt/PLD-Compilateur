@@ -11,7 +11,7 @@ public:
     void emitPrologue(ControlFlowGraph *cfg, std::ostream &output) override;
     void emitEpilogue(ControlFlowGraph *cfg, std::ostream &output) override;
 
-    std::string varToLocation(std::string name, ControlFlowGraph *cfg) override;
+    std::string varToLocation(std::string name, ControlFlowGraph *cfg, int offset = 0) override;
     std::string parameterToLocation(int index) override;
 
     void emit(Add *instr, std::ostream &output) override;
