@@ -319,7 +319,17 @@ void X86Backend::emit(DereferenceRead *instr, std::ostream &output)
     // un pointeur (8 octets), déréférencer un T* rend un scalaire (4 octets).
     int size = cfg->getVar(instr->getDestination()).size();
     output << "    movq " << varToLocation(instr->getSrc(), cfg, instr->getOffset()) << ", %rax\n";
-    output << "    " << movOp(size) << " (%rax), " << accReg(size) << "\n";
+    if (instr->getIndex().empty())
+    {
+        output << "    " << movOp(size) << " (%rax), " << accReg(size) << "\n";
+    }
+    else
+    {
+        // Adressage indexé : base(%rax) + index(%rcx) * scale, scale = taille élément.
+        // movslq étend l'index 32 bits en 64 bits (un registre d'index doit l'être).
+        output << "    movslq " << varToLocation(instr->getIndex(), cfg) << ", %rcx\n";
+        output << "    " << movOp(size) << " (%rax,%rcx," << size << "), " << accReg(size) << "\n";
+    }
     output << "    " << movOp(size) << " " << accReg(size) << ", " << varToLocation(instr->getDestination(), cfg) << "\n";
 }
 

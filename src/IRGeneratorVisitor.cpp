@@ -210,11 +210,15 @@ antlrcpp::Any IRGeneratorVisitor::visitVariable_expression(ifccParser::Variable_
 antlrcpp::Any IRGeneratorVisitor::visitTable_expression_read_value(ifccParser::Table_expression_read_valueContext *ctx)
 {
     std::string tableName = ctx->IDENTIFIER()->getText();
+    Type elementType = currentCFG->getVar(tableName).type;
 
+    // a[i] ≡ *(a + i) : l'index est une valeur d'exécution. On le transmet tel
+    // quel au backend, qui s'appuie sur l'adressage indexé disp(base, idx, scale)
+    // où scale = taille de l'élément — la multiplication est faite par le hardware.
     std::string indexVar = asString(visit(ctx->expression()));
     Block *block = currentCFG->getCurrentBlock();
-    std::string tmp = currentCFG->addTempVariable(currentCFG->getVar(tableName).type);
-    block->addInstruction(new DereferenceRead(block, currentCFG->getVar(tableName).type, tmp, tableName, std::stoi(indexVar) * typeSize(currentCFG->getVar(tableName).type)));
+    std::string tmp = currentCFG->addTempVariable(elementType);
+    block->addInstruction(new DereferenceRead(block, elementType, tmp, tableName, 0, indexVar));
     return tmp;
 }
 
