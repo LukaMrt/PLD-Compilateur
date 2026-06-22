@@ -128,16 +128,20 @@ antlrcpp::Any IRGeneratorVisitor::visitTable_definition(ifccParser::Table_defini
     Type type = symbolTable.at(varName).type;
     int pointerDepth = 0; // Tableaux = zones contiguës, pas pointeurs
     int size = ctx->CONSTANT() ? std::stoi(ctx->CONSTANT()->getText()) : -1;
-    int size_table_init = -1;
-    if (ctx->table_init())
+
+    // Les valeurs d'initialisation sont d'abord évaluées en IR (chacune renvoie
+    // un temporaire), avant d'être écrites dans la zone du tableau plus bas.
+    std::vector<std::string> initValues;
+    auto tableInit = ctx->table_init() ? dynamic_cast<ifccParser::Table_initContext *>(ctx->table_init()) : nullptr;
+    if (tableInit)
     {
-        auto tableInit = dynamic_cast<ifccParser::Table_initContext *>(ctx->table_init());
-        if (tableInit)
+        for (auto expression : tableInit->expression())
         {
-            size_table_init = tableInit->expression().size();
+            initValues.push_back(asString(visit(expression)));
         }
-        visit(ctx->table_init());
     }
+    int size_table_init = tableInit ? static_cast<int>(initValues.size()) : -1;
+
     if (size_table_init != -1 && size != -1 && size_table_init != size)
     {
         std::cerr << "Error: table '" << varName << "' has size " << size
@@ -147,7 +151,15 @@ antlrcpp::Any IRGeneratorVisitor::visitTable_definition(ifccParser::Table_defini
 
     int array_size = (size != -1) ? size : size_table_init;
     currentCFG->addVariable(varName, type, pointerDepth, array_size);
-    // Pas de LoadConstant : le tableau est une zone directement
+
+    // Initialisation : a[i] = valeur. Les indices sont connus à la compilation,
+    // on passe donc par le déplacement constant offset = i * sizeof(élément).
+    Block *block = currentCFG->getCurrentBlock();
+    int elementSize = typeSize(type);
+    for (size_t i = 0; i < initValues.size(); ++i)
+    {
+        block->addInstruction(new DereferenceWrite(block, type, varName, initValues[i], static_cast<int>(i) * elementSize));
+    }
     return 0;
 }
 

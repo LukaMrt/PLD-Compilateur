@@ -318,7 +318,16 @@ void X86Backend::emit(DereferenceRead *instr, std::ostream &output)
     // la valeur lue dépend de la taille du résultat : déréférencer un T** rend
     // un pointeur (8 octets), déréférencer un T* rend un scalaire (4 octets).
     int size = cfg->getVar(instr->getDestination()).size();
-    output << "    movq " << varToLocation(instr->getSrc(), cfg, instr->getOffset()) << ", %rax\n";
+    // base(%rax) = adresse à déréférencer. Un pointeur se charge avec son contenu
+    // (movq), tandis qu'un tableau (zone contiguë) fournit sa propre adresse (leaq).
+    if (cfg->getVar(instr->getSrc()).pointerDepth > 0)
+    {
+        output << "    movq " << varToLocation(instr->getSrc(), cfg, instr->getOffset()) << ", %rax\n";
+    }
+    else
+    {
+        output << "    leaq " << varToLocation(instr->getSrc(), cfg, instr->getOffset()) << ", %rax\n";
+    }
     if (instr->getIndex().empty())
     {
         output << "    " << movOp(size) << " (%rax), " << accReg(size) << "\n";
@@ -340,6 +349,24 @@ void X86Backend::emit(DereferenceWrite *instr, std::ostream &output)
     // la valeur écrite suit la taille de la source (pointeur ou scalaire).
     int size = cfg->getVar(instr->getSrc()).size();
     output << "    " << movOp(size) << " " << varToLocation(instr->getSrc(), cfg) << ", " << accReg(size) << "\n";
-    output << "    movq " << varToLocation(instr->getDest(), cfg, instr->getOffset()) << ", %rcx\n";
-    output << "    " << movOp(size) << " " << accReg(size) << ", (%rcx)\n";
+    // base(%rcx) = adresse cible : contenu du slot pour un pointeur (movq),
+    // adresse du slot lui-même pour un tableau zone contiguë (leaq).
+    if (cfg->getVar(instr->getDest()).pointerDepth > 0)
+    {
+        output << "    movq " << varToLocation(instr->getDest(), cfg, instr->getOffset()) << ", %rcx\n";
+    }
+    else
+    {
+        output << "    leaq " << varToLocation(instr->getDest(), cfg, instr->getOffset()) << ", %rcx\n";
+    }
+    if (instr->getIndex().empty())
+    {
+        output << "    " << movOp(size) << " " << accReg(size) << ", (%rcx)\n";
+    }
+    else
+    {
+        // Adressage indexé : base(%rcx) + index(%rdx) * scale, scale = taille élément.
+        output << "    movslq " << varToLocation(instr->getIndex(), cfg) << ", %rdx\n";
+        output << "    " << movOp(size) << " " << accReg(size) << ", (%rcx,%rdx," << size << ")\n";
+    }
 }
