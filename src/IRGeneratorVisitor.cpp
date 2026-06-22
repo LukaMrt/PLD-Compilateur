@@ -67,7 +67,11 @@ antlrcpp::Any IRGeneratorVisitor::visitFunction(ifccParser::FunctionContext *ctx
     functionReturnTypes[funcName] = returnType;
     cfgs[funcName] = new ControlFlowGraph(funcName);
     currentCFG = cfgs[funcName];
-    currentCFG->addVariable("$return", returnType);
+    // Même pour une fonction void, $return doit occuper un vrai slot : avec le
+    // type VOID (taille 0) son offset resterait 0, et -0(%rbp) écraserait le RBP
+    // sauvegardé → corruption de pile au leave/ret. On lui réserve donc 4 octets.
+    Type returnSlotType = (returnType == Type::VOID) ? Type::INT32 : returnType;
+    currentCFG->addVariable("$return", returnSlotType);
 
     // Le bloc de sortie est créé ici mais n'est pas ajouté à la liste des blocs ;
     // il est émis séparément par generateASM juste avant l'épilogue.
@@ -76,7 +80,7 @@ antlrcpp::Any IRGeneratorVisitor::visitFunction(ifccParser::FunctionContext *ctx
 
     Block *block = new Block(currentCFG, funcName + "_entry");
     currentCFG->addBlock(block);
-    block->addInstruction(new LoadConstant(block, returnType, "$return", 0));
+    block->addInstruction(new LoadConstant(block, returnSlotType, "$return", 0));
 
     visitChildren(ctx);
 
@@ -142,7 +146,9 @@ antlrcpp::Any IRGeneratorVisitor::visitTable_definition(ifccParser::Table_defini
     }
     int size_table_init = tableInit ? static_cast<int>(initValues.size()) : -1;
 
-    if (size_table_init != -1 && size != -1 && size_table_init != size)
+    // En C, une initialisation partielle est légale (les éléments restants
+    // valent 0) : on n'échoue que s'il y a PLUS de valeurs que la taille déclarée.
+    if (size_table_init != -1 && size != -1 && size_table_init > size)
     {
         std::cerr << "Error: table '" << varName << "' has size " << size
                   << " but is initialized with " << size_table_init << " values." << std::endl;
@@ -159,6 +165,12 @@ antlrcpp::Any IRGeneratorVisitor::visitTable_definition(ifccParser::Table_defini
     for (size_t i = 0; i < initValues.size(); ++i)
     {
         block->addInstruction(new DereferenceWrite(block, type, varName, initValues[i], static_cast<int>(i) * elementSize));
+    }
+    // Initialisation partielle : les éléments restants sont mis à 0 (sémantique C).
+    for (int i = static_cast<int>(initValues.size()); i < array_size; ++i)
+    {
+        std::string zero = emitConstant(type, 0);
+        block->addInstruction(new DereferenceWrite(block, type, varName, zero, i * elementSize));
     }
     return 0;
 }

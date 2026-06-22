@@ -83,7 +83,9 @@ antlrcpp::Any SymbolTableVisitor::visitTable_definition(ifccParser::Table_defini
     int pointerDepth = 0; // Tableaux = zones, pas pointeurs
     int size = ctx->CONSTANT() ? std::stoi(ctx->CONSTANT()->getText()) : -1;
     int size_table_init = ctx->table_init() ? ctx->table_init()->expression().size() : -1;
-    if (size_table_init != -1 && size != -1 && size_table_init != size)
+    // Initialisation partielle légale en C : on n'échoue que s'il y a PLUS de
+    // valeurs que la taille déclarée (les éléments manquants valent 0).
+    if (size_table_init != -1 && size != -1 && size_table_init > size)
     {
         std::cerr << "Error: table '" << varName << "' has size " << size
                   << " but is initialized with " << size_table_init << " values." << std::endl;

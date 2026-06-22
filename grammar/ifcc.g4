@@ -33,6 +33,7 @@ statement
     | return_statement SEMI_COLON
     | IF PARENTHESES_OPEN expression PARENTHESES_CLOSE following_condition (ELSE following_condition)?
     | WHILE PARENTHESES_OPEN expression PARENTHESES_CLOSE following_condition
+    | SEMI_COLON
     ;
 
 variable_declaration
