@@ -65,7 +65,7 @@ antlrcpp::Any SymbolTableVisitor::visitVariable_definition_without_instruction(i
     return 0;
 }
 
-antlrcpp::Any SymbolTableVisitor::visitLeft_value(ifccParser::Variable_left_valueContext *ctx)
+antlrcpp::Any SymbolTableVisitor::visitLeft_value(ifccParser::Left_valueContext *ctx)
 {
     std::string varName = ctx->IDENTIFIER()->getText();
     this->checkDeclared(varName);

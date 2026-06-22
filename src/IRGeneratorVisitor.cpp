@@ -132,7 +132,7 @@ antlrcpp::Any IRGeneratorVisitor::visitTable_definition(ifccParser::Table_defini
     int size_table_init = -1;
     if (ctx->table_init())
     {
-        auto tableInit = dynamic_cast<ifccParser::Table_expression_load_valuesContext *>(ctx->table_init());
+        auto tableInit = dynamic_cast<ifccParser::Table_initContext *>(ctx->table_init());
         if (tableInit)
         {
             size_table_init = tableInit->expression().size();
@@ -218,7 +218,7 @@ antlrcpp::Any IRGeneratorVisitor::visitTable_expression_read_value(ifccParser::T
     return tmp;
 }
 
-antlrcpp::Any IRGeneratorVisitor::visitTable_expression_load_values(ifccParser::Table_expression_load_valuesContext *ctx)
+antlrcpp::Any IRGeneratorVisitor::visitTable_init(ifccParser::Table_initContext *ctx)
 {
     std::vector<std::string> values;
     for (auto expression : ctx->expression())

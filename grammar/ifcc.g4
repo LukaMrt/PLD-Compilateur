@@ -44,9 +44,9 @@ variable_definition
     | left_value EQUAL expression #variable_definition_with_instruction
     | left_value                   #variable_definition_without_instruction
     ;
-
+    
 table_init
-    : CURLY_BRACE_OPEN expression (COMMA expression)* CURLY_BRACE_CLOSE                # table_expression_load_values
+    : CURLY_BRACE_OPEN expression (COMMA expression)* CURLY_BRACE_CLOSE    
     ;
 
 left_value

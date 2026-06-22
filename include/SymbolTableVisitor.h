@@ -25,6 +25,7 @@ public:
         virtual antlrcpp::Any visitLeft_value(ifccParser::Left_valueContext *ctx) override;
         virtual antlrcpp::Any visitVariable_expression(ifccParser::Variable_expressionContext *ctx) override;
         virtual antlrcpp::Any visitFunction_call(ifccParser::Function_callContext *ctx) override;
+        virtual antlrcpp::Any visitTable_definition(ifccParser::Table_definitionContext *ctx) override;
         std::map<std::string, Variable> getSymbolTable(const std::string &funcName) const { return allSymbolTables.at(funcName); }
         std::map<std::string, std::map<std::string, Variable>> getAllSymbolTables() const { return allSymbolTables; }
         std::map<std::string, FunctionInfo> getFunctionTable() const { return functionTable; }
