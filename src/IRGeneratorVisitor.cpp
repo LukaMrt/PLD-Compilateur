@@ -51,13 +51,12 @@ std::string IRGeneratorVisitor::emitConstant(Type type, int value)
 
 std::string IRGeneratorVisitor::emitTable(Type type, const std::vector<std::string> &values)
 {
-    std::string tmp = currentCFG->addTempVariable(type, 1);
-    Block *block = currentCFG->getCurrentBlock();
-    for (size_t i = 0; i < values.size(); ++i)
-    {
-        block->addInstruction(new DereferenceWrite(block, type, tmp, values[i], i * typeSize(type)));
-    }
-    return tmp;
+    // Les valeurs d'initialisation du tableau ont déjà été visitées par visitTable_init.
+    // Retourner le nom du tableau n'a ici aucun sens : les données sont déjà dans la zone allouée.
+    // Cette fonction n'est pas appelée directement en IR, mais via visitTable_init.
+    // La vraie initialisation se fera lors de visitTable_definition via Copy des valeurs dans la zone.
+    // Pour l'instant, retourner une valeur vide.
+    return "";
 }
 
 antlrcpp::Any IRGeneratorVisitor::visitFunction(ifccParser::FunctionContext *ctx)
@@ -127,7 +126,7 @@ antlrcpp::Any IRGeneratorVisitor::visitTable_definition(ifccParser::Table_defini
 {
     std::string varName = ctx->IDENTIFIER()->getText();
     Type type = symbolTable.at(varName).type;
-    int pointerDepth = 1; // Les tableaux sont toujours des pointeurs
+    int pointerDepth = 0; // Tableaux = zones contiguës, pas pointeurs
     int size = ctx->CONSTANT() ? std::stoi(ctx->CONSTANT()->getText()) : -1;
     int size_table_init = -1;
     if (ctx->table_init())
@@ -137,6 +136,7 @@ antlrcpp::Any IRGeneratorVisitor::visitTable_definition(ifccParser::Table_defini
         {
             size_table_init = tableInit->expression().size();
         }
+        visit(ctx->table_init());
     }
     if (size_table_init != -1 && size != -1 && size_table_init != size)
     {
@@ -147,9 +147,7 @@ antlrcpp::Any IRGeneratorVisitor::visitTable_definition(ifccParser::Table_defini
 
     int array_size = (size != -1) ? size : size_table_init;
     currentCFG->addVariable(varName, type, pointerDepth, array_size);
-
-    Block *block = currentCFG->getCurrentBlock();
-    block->addInstruction(new LoadConstant(block, type, varName, 0));
+    // Pas de LoadConstant : le tableau est une zone directement
     return 0;
 }
 
@@ -158,15 +156,24 @@ antlrcpp::Any IRGeneratorVisitor::visitAssignment(ifccParser::AssignmentContext 
     std::string srcVar = asString(visit(ctx->expression()));
     Block *block = currentCFG->getCurrentBlock();
 
-    // Un lvalue sans étoile désigne directement une variable : copie directe.
-    // Avec étoile(s), on calcule l'adresse cible puis on écrit à travers elle.
-    if (ctx->left_value()->TIMES().empty())
+    // Trois cas : x = v, *p = v, a[i] = v
+    if (ctx->left_value()->BRACKET_OPEN())
     {
+        // a[i] = v : accès direct indexing + DereferenceWrite
+        std::string arrayName = ctx->left_value()->IDENTIFIER()->getText();
+        Variable arrayVar = currentCFG->getVar(arrayName);
+        std::string indexVar = asString(visit(ctx->left_value()->expression()));
+        block->addInstruction(new DereferenceWrite(block, arrayVar.type, arrayName, srcVar, 0, indexVar));
+    }
+    else if (ctx->left_value()->TIMES().empty())
+    {
+        // x = v : copie directe (scalaire ou pointeur sans déréférencement)
         std::string destVar = ctx->left_value()->IDENTIFIER()->getText();
         block->addInstruction(new Copy(block, currentCFG->getVar(destVar).type, destVar, srcVar));
     }
     else
     {
+        // *p = v, **pp = v, ... : évaluer l'adresse, puis écrire
         std::string addr = evalAddress(ctx->left_value());
         block->addInstruction(new DereferenceWrite(block, currentCFG->getVar(addr).type, addr, srcVar));
     }
@@ -210,14 +217,16 @@ antlrcpp::Any IRGeneratorVisitor::visitVariable_expression(ifccParser::Variable_
 antlrcpp::Any IRGeneratorVisitor::visitTable_expression_read_value(ifccParser::Table_expression_read_valueContext *ctx)
 {
     std::string tableName = ctx->IDENTIFIER()->getText();
-    Type elementType = currentCFG->getVar(tableName).type;
+    Variable tableVar = currentCFG->getVar(tableName);
+    Type elementType = tableVar.type;
 
-    // a[i] ≡ *(a + i) : l'index est une valeur d'exécution. On le transmet tel
-    // quel au backend, qui s'appuie sur l'adressage indexé disp(base, idx, scale)
-    // où scale = taille de l'élément — la multiplication est faite par le hardware.
+    // a[i] : l'adresse est tableVar.offset + i * sizeof(element)
+    // L'index est une valeur d'exécution, transmise au backend pour l'adressage indexé
     std::string indexVar = asString(visit(ctx->expression()));
     Block *block = currentCFG->getCurrentBlock();
     std::string tmp = currentCFG->addTempVariable(elementType);
+    int elementSize = typeSize(elementType);
+    // DereferenceRead : lire depuis (base + index*scale) sans déréférencement intermédiaire
     block->addInstruction(new DereferenceRead(block, elementType, tmp, tableName, 0, indexVar));
     return tmp;
 }

@@ -68,15 +68,19 @@ antlrcpp::Any SymbolTableVisitor::visitVariable_definition_without_instruction(i
 antlrcpp::Any SymbolTableVisitor::visitLeft_value(ifccParser::Left_valueContext *ctx)
 {
     std::string varName = ctx->IDENTIFIER()->getText();
-    this->checkDeclared(varName);
-    return visitChildren(ctx);
+    this->useVariable(varName);
+    if (ctx->expression())
+    {
+        visit(ctx->expression()); // Visite l'index pour vérifier les variables qu'il utilise
+    }
+    return 0;
 }
 
 antlrcpp::Any SymbolTableVisitor::visitTable_definition(ifccParser::Table_definitionContext *ctx)
 {
     std::string varName = ctx->IDENTIFIER()->getText();
     auto declaration = dynamic_cast<ifccParser::Variable_declarationContext *>(ctx->parent);
-    int pointerDepth = 1;
+    int pointerDepth = 0; // Tableaux = zones, pas pointeurs
     int size = ctx->CONSTANT() ? std::stoi(ctx->CONSTANT()->getText()) : -1;
     int size_table_init = ctx->table_init() ? ctx->table_init()->expression().size() : -1;
     if (size_table_init != -1 && size != -1 && size_table_init != size)
@@ -84,9 +88,9 @@ antlrcpp::Any SymbolTableVisitor::visitTable_definition(ifccParser::Table_defini
         std::cerr << "Error: table '" << varName << "' has size " << size
                   << " but is initialized with " << size_table_init << " values." << std::endl;
         exit(1);
-    } 
+    }
     int final_size = (size != -1) ? size : size_table_init;
-    this->declareVariable(varName, stringToType(declaration->TYPE()->getText()), pointerDepth);
+    this->declareVariable(varName, stringToType(declaration->TYPE()->getText()), pointerDepth, final_size);
     return visitChildren(ctx);
 }
 
