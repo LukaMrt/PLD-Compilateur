@@ -41,3 +41,4 @@
 ifcc-test-output/
 resource/
 grammar/.antlr/
+.demo_tmp/

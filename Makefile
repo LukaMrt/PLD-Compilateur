@@ -135,6 +135,9 @@ docker-asm: docker-build
 docker-gui: docker-build
 	@$(DOCKER_RUN) make gui FILE=$(FILE)
 
+demo: docker-build
+	@python3 demo/demo.py
+
 re: clean all
 
-.PHONY: docker-build docker docker-test docker-clean docker-asm docker-gcc-asm docker-gui test clean re
+.PHONY: docker-build docker docker-test docker-clean docker-asm docker-gcc-asm docker-gui demo test clean re
