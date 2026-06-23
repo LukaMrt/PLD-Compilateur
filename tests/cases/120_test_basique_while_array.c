@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 int main() {
     int size = 5;
     
@@ -7,6 +9,7 @@ int main() {
     
     i = 1; // Affiche la taille du tableau pour vérification
     while (i < size) {
+        putchar(i);
         key = arr[i];
         j = i - 1;
         
