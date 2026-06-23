@@ -107,6 +107,16 @@ DEMOS = [
         "file": "14_putchar_getchar.c",
         "stdin": "B",
     },
+    {
+        "title": "Tableau + tri par insertion (while imbriqués)",
+        "concepts": ["Tableaux int arr[]", "Accès indexé arr[i] / arr[j+1]", "while imbriqués sans &&", "Drapeau pour contrôle de flux"],
+        "file": "15_while_array_tri.c",
+    },
+    {
+        "title": "Étoile de David (hexagramme) — putchar + while imbriqués",
+        "concepts": ["Rendu 2D caractère par caractère", "Union de 2 triangles, détection de bord", "Conditions sans && (fonctions 0/1)", "while imbriqués + appels de fonctions multiples"],
+        "file": "16_putchar_etoile.c",
+    },
 ]
 
 
@@ -252,7 +262,9 @@ def show_demo(demo):
     if exit_code is not None:
         print(BOLD + GREEN + "┌─ Exécution " + "─" * 46 + RESET)
         if run_stdout:
-            print(GREEN + "│ " + RESET + f"stdout : {repr(run_stdout)}")
+            print(GREEN + "│ " + RESET + "stdout :")
+            for line in run_stdout.splitlines():
+                print(GREEN + "│ " + RESET + line)
         signed = exit_code if exit_code <= 127 else exit_code - 256
         note = f"  {DIM}(= {signed} signé — exit code tronqué à 8 bits){RESET}" if signed != exit_code else ""
         print(GREEN + "│ " + RESET + f"Code de retour : {BOLD}{exit_code}{RESET}{note}")
