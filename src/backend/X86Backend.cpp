@@ -223,15 +223,33 @@ void X86Backend::emit(CallFunction *instr, std::ostream &output)
 
     for (size_t i = args.size(); i-- > 6;)
     {
-        int size = cfg->getVar(args[i]).size();
-        output << "    " << movOp(size) << " " << varToLocation(args[i], cfg) << ", " << accReg(size) << "\n";
+        Variable arg = cfg->getVar(args[i]);
+        if (arg.array_size >= 0)
+        {
+            // Décaiement tableau→pointeur : on passe l'adresse de base (8 octets).
+            output << "    leaq " << varToLocation(args[i], cfg) << ", %rax\n";
+        }
+        else
+        {
+            int size = arg.size();
+            output << "    " << movOp(size) << " " << varToLocation(args[i], cfg) << ", " << accReg(size) << "\n";
+        }
         output << "    pushq %rax\n";
     }
 
     for (size_t i = 0; i < args.size() && i < 6; i++)
     {
-        int size = cfg->getVar(args[i]).size();
-        output << "    " << movOp(size) << " " << varToLocation(args[i], cfg) << ", " << argReg(i, size) << "\n";
+        Variable arg = cfg->getVar(args[i]);
+        if (arg.array_size >= 0)
+        {
+            // Décaiement tableau→pointeur : l'adresse de base dans le registre 64 bits.
+            output << "    leaq " << varToLocation(args[i], cfg) << ", " << argReg(i, 8) << "\n";
+        }
+        else
+        {
+            int size = arg.size();
+            output << "    " << movOp(size) << " " << varToLocation(args[i], cfg) << ", " << argReg(i, size) << "\n";
+        }
     }
 
     output << "    call " << instr->getFunctionName() << "\n";
