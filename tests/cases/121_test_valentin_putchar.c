@@ -21,6 +21,6 @@ void draw_space_star(int space)
 
 int main()
 {
-    int count = 1;
+    int count = 5;
     draw_space_star(6 - count - 1);
 }
