@@ -67,6 +67,7 @@ antlrcpp::Any IRGeneratorVisitor::visitFunction(ifccParser::FunctionContext *ctx
     functionReturnTypes[funcName] = returnType;
     cfgs[funcName] = new ControlFlowGraph(funcName);
     currentCFG = cfgs[funcName];
+    knownConstants.clear();
     // Même pour une fonction void, $return doit occuper un vrai slot : avec le
     // type VOID (taille 0) son offset resterait 0, et -0(%rbp) écraserait le RBP
     // sauvegardé → corruption de pile au leave/ret. On lui réserve donc 4 octets.
