@@ -10,7 +10,7 @@
 void draw_space_star(int space)
 {
     int count = 0;
-    //putchar('B');
+    putchar('\n');
     while (count < space)
     {
         putchar(' ');

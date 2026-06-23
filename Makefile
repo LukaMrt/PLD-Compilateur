@@ -126,6 +126,11 @@ docker: docker-build
 docker-test: docker-build
 	@$(DOCKER_RUN) make test
 
+# Docker : exécute un seul fichier de test dans le conteneur.
+# Usage: `make docker-test-one FILE=tests/cases/1_return42.c`
+docker-test-one: docker-build
+	@$(DOCKER_RUN) sh -c "make && python3 -u tests/ifcc-test.py $(FILE) | python3 tests/ifcc-pretty.py"
+
 docker-clean: docker-build
 	@$(DOCKER_RUN) make clean
 
@@ -140,4 +145,4 @@ demo: docker-build
 
 re: clean all
 
-.PHONY: docker-build docker docker-test docker-clean docker-asm docker-gcc-asm docker-gui demo test clean re
+.PHONY: docker-build docker docker-test docker-test-one docker-clean docker-asm docker-gcc-asm docker-gui demo test clean re
