@@ -233,6 +233,29 @@ antlrcpp::Any IRGeneratorVisitor::visitCharacter_expression(ifccParser::Characte
     return emitConstant(Type::CHAR, value);
 }
 
+antlrcpp::Any IRGeneratorVisitor::visitEscaped_character_expression(ifccParser::Escaped_character_expressionContext *ctx)
+{
+    // Le texte du token CHARACTER est "'A'" : le caractère utile est à l'indice 1.
+    int value = ctx->ESCAPED_CHARACTER()->getText()[2];
+    switch (value) {
+        case 'a':
+            return emitConstant(Type::CHAR, 7);
+        case 'b':
+            return emitConstant(Type::CHAR, 8);
+        case 't':
+            return emitConstant(Type::CHAR, 9);
+        case 'n':
+            return emitConstant(Type::CHAR, 10);
+        case 'v':
+            return emitConstant(Type::CHAR, 11);
+        case 'f':
+            return emitConstant(Type::CHAR, 12);
+        case 'r':
+            return emitConstant(Type::CHAR, 13);
+    }
+    return emitConstant(Type::CHAR, 'a');
+}
+
 antlrcpp::Any IRGeneratorVisitor::visitVariable_expression(ifccParser::Variable_expressionContext *ctx)
 {
     return ctx->IDENTIFIER()->getText();
