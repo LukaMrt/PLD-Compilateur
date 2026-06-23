@@ -14,9 +14,6 @@ int main() {
         key = arr[i];
         j = i - 1;
 
-        // Décalage par insertion sans operateur && :
-        // on imbrique un if pour la condition "arr[j] > key"
-        // et un drapeau "placed" pour stopper la boucle proprement.
         placed = 0;
         while (j >= 0) {
             if (placed == 0) {

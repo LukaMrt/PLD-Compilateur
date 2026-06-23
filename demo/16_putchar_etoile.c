@@ -1,96 +1,152 @@
+/*
+** EPITECH PROJECT, 2021
+** Star
+** File description:
+** Main function to display the star !
+*/
+
 #include <stdio.h>
 
-int my_abs(int x) {
-    if (x < 0) {
-        x = -x;
+void display_line(int size)
+{
+    int count = 0;
+    while (count < 2 * size + 1) {
+        putchar('*');
+        count = count + 1;
     }
-    return x;
+
+    count = 0;
+    while (count < 2 * size - 3) {
+        putchar(' ');
+        count = count + 1;
+    }
+
+    count = 0;
+    while (count < 2 * size + 1) {
+        putchar('*');
+        count = count + 1;
+    }
+
+    putchar('\n');
 }
 
-// Appartenance au triangle pointe-en-haut : apex ligne 0, base ligne 2n.
-int in_up(int r, int col, int n, int C) {
-    int res;
-    res = 0;
-    if (r <= 2 * n) {
-        if (my_abs(col - C) <= r) {
-            res = 1;
-        }
+void draw_space_star(int space)
+{
+    int count = 0;
+    while (count < space) {
+        putchar(' ');
+        count = count + 1;
     }
-    return res;
+    putchar('*');
 }
 
-// Appartenance au triangle pointe-en-bas : apex ligne 3n, base ligne n.
-int in_down(int r, int col, int n, int C) {
-    int res;
-    res = 0;
-    if (r >= n) {
-        if (my_abs(col - C) <= (3 * n - r)) {
-            res = 1;
-        }
+void draw_space_side(int size)
+{
+    int count = 0;
+    while (count < 2 * size) {
+        putchar(' ');
+        count = count + 1;
     }
-    return res;
 }
 
-// Union des deux triangles (pas de || : deux if successifs).
-int inside(int r, int col, int n, int C) {
-    int res;
-    res = 0;
-    if (in_up(r, col, n, C)) {
-        res = 1;
+void display_tiny_line()
+{
+    int count = 0;
+    while (count < 7) {
+        if (count == 3)
+            putchar(' ');
+        else
+            putchar('*');
+        count = count + 1;
     }
-    if (in_down(r, col, n, C)) {
-        res = 1;
-    }
-    return res;
+
+    putchar('\n');
 }
 
-// Cellule au bord = dans l'union mais avec au moins un voisin hors union.
-int is_edge(int r, int col, int n, int C) {
-    int res;
-    res = 0;
-    if (inside(r, col, n, C)) {
-        if (inside(r - 1, col, n, C) == 0) {
-            res = 1;
-        }
-        if (inside(r + 1, col, n, C) == 0) {
-            res = 1;
-        }
-        if (inside(r, col - 1, n, C) == 0) {
-            res = 1;
-        }
-        if (inside(r, col + 1, n, C) == 0) {
-            res = 1;
-        }
+void little_star()
+{
+    draw_space_star(3);
+    putchar('\n');
+
+    display_tiny_line();
+
+    draw_space_star(1);
+    draw_space_star(3);
+    putchar('\n');
+
+    display_tiny_line();
+
+    draw_space_star(3);
+    putchar('\n');
+}
+
+void cone(int size)
+{
+    int count = 1;
+    while (count < size) {
+        draw_space_side(size);
+        draw_space_star(size - count - 1);
+        //draw_space_star(2 * count - 1);
+        putchar('\n');
+        count = count + 1;
     }
-    return res;
+}
+
+void hopper(int size)
+{
+    int count = 1;
+    while(count < size) {
+        draw_space_star(count);
+        draw_space_star(6 * size - 1 - 2 * count - 2);
+        putchar('\n');
+        count = count + 1;
+    }
+
+    count = size;
+    while(count > 0) {
+        draw_space_star(count);
+        draw_space_star(6 * size - 1 - 2 * count - 2);
+        putchar('\n');
+        count = count - 1;
+    }
+}
+
+void reverse_cone(int size)
+{
+    int count = size - 1;
+    while (count > 0) {
+        draw_space_side(size);
+        draw_space_star(size - count - 1);
+        draw_space_star(2 * count - 1);
+        putchar('\n');
+        count = count - 1;
+    }
+}
+
+void star(int size)
+{
+    if (size == 1) {
+        little_star();
+    } else if (size != 0) {
+        draw_space_side(size);
+        draw_space_star(size - 1);
+        putchar('\n');
+        cone(size);
+
+        display_line(size);
+
+        hopper(size);
+
+        display_line(size);
+
+        reverse_cone(size);
+
+        draw_space_side(size);
+        draw_space_star(size - 1);
+        putchar('\n');
+    }
 }
 
 int main() {
-    int n;
-    int C;
-    int R;
-    int W;
-    int r;
-    int col;
-
-    n = 8;         // taille de l'étoile
-    C = 3 * n;     // colonne centrale
-    R = 3 * n;     // derniere ligne
-    W = 6 * n + 1; // largeur
-
-    r = 0;
-    while (r <= R) {
-        col = 0;
-        while (col < W) {
-            if (is_edge(r, col, n, C)) {
-                putchar('*');
-            } else {
-                putchar(' ');
-            }
-            col = col + 1;
-        }
-        putchar('\n');
-        r = r + 1;
-    }
-    return 0;
+    star(4);
 }
