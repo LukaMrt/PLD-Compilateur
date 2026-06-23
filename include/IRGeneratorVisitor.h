@@ -26,6 +26,7 @@ public:
     virtual antlrcpp::Any visitAssignment(ifccParser::AssignmentContext *ctx) override;
     virtual antlrcpp::Any visitConstant_expression(ifccParser::Constant_expressionContext *ctx) override;
     virtual antlrcpp::Any visitCharacter_expression(ifccParser::Character_expressionContext *ctx) override;
+    virtual antlrcpp::Any visitEscaped_character_expression(ifccParser::Escaped_character_expressionContext *ctx) override;
     virtual antlrcpp::Any visitVariable_expression(ifccParser::Variable_expressionContext *ctx) override;
     virtual antlrcpp::Any visitFunction_call(ifccParser::Function_callContext *ctx) override;
     virtual antlrcpp::Any visitUnary_operation(ifccParser::Unary_operationContext *ctx) override;

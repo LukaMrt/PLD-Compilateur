@@ -71,6 +71,7 @@ expression
     | PARENTHESES_OPEN expression PARENTHESES_CLOSE                                    # bracketed_expression
     | CONSTANT                                                                         # constant_expression
     | CHARACTER                                                                        # character_expression
+    | ESCAPED_CHARACTER                                                                # escaped_character_expression
     | IDENTIFIER                                                                       # variable_expression
     | IDENTIFIER BRACKET_OPEN expression BRACKET_CLOSE                                 # table_expression_read_value
     | IDENTIFIER PARENTHESES_OPEN (expression (COMMA expression)*)? PARENTHESES_CLOSE  # function_call
@@ -129,5 +130,6 @@ COMMENT : '/*' .*? '*/' -> skip ;
 LINE_COMMENT : '//' ~[\r\n]* -> skip ;
 CONSTANT : [0-9]+ ;
 DIRECTIVE : '#' .*? '\n' -> skip ;
+ESCAPED_CHARACTER : '\'\\' . '\'' ;
 CHARACTER : '\'' . '\'' ;
 IDENTIFIER  : [a-zA-Z_][a-zA-Z0-9_]* ;
