@@ -190,18 +190,31 @@ int main() { int x = 2 + 3 * 4; return x; }
 Le pliage supprime les **opérations** (`imull`, `addl`) ; chaque constante reste
 un `LoadConstant`. Le `14` est calculé à la compilation :
 
+---
+
 ```asm
+.globl main
 main:
-    pushq %rbp ; movq %rsp, %rbp ; subq $32, %rsp
-    movl $0,  -4(%rbp)       # $return = 0
-    movl $2,  -8(%rbp)       # $temp0 = 2
-    movl $3,  -12(%rbp)      # $temp1 = 3
-    movl $4,  -16(%rbp)      # $temp2 = 4
-    movl $12, -20(%rbp)      # $temp3 = 12   ← 3*4 plié (pas d'imull)
-    movl $14, -24(%rbp)      # $temp4 = 14   ← 2+12 plié (pas d'addl)
-    movl -24(%rbp), %eax     # x = $temp4 ; puis $return = x
-    movl %eax, -28(%rbp) ; movl -28(%rbp), %eax ; movl %eax, -4(%rbp)
-    leave ; ret              # → code de sortie 14
+    pushq %rbp
+    movq %rsp, %rbp
+    subq $32, %rsp
+main_entry:
+    movl $0, -4(%rbp)
+    movl $2, -8(%rbp)
+    movl $3, -12(%rbp)
+    movl $4, -16(%rbp)
+    movl $12, -20(%rbp)
+    movl $14, -24(%rbp)
+    movl -24(%rbp), %eax
+    movl %eax, -28(%rbp)
+    movl -28(%rbp), %eax
+    movl %eax, -4(%rbp)
+    jmp main_exit
+main_dead0:
+main_exit:
+    movl -4(%rbp), %eax
+    leave
+    ret
 ```
 
 ---
