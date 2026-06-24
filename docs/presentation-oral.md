@@ -93,9 +93,10 @@ Block            ─owns→ [Instruction, …] + arêtes true/false
 
 ## Passe 2 — Optimisations à la volée
 
-**Pliage de constantes** — évaluées à la compilation :
+**Pliage de constantes** — les **opérations** entre constantes connues sont
+évaluées à la compilation : aucun `imull`/`addl` émis, juste des chargements.
 ```c
-int x = 2 + 3 * 4;   //  →  x = 14   (une seule constante)
+int x = 2 + 3 * 4;   //  3*4 et 2+12 pliés → on charge directement 14
 ```
 
 **Simplifications algébriques** — neutres / absorbants :
@@ -180,23 +181,26 @@ o << "    movl (%rax,%rcx," << size << "), %eax\n"; // base + index*scale
 
 ---
 
-## Exemple bout-en-bout
+## Exemple bout-en-bout — pliage
 
 ```c
 int main() { int x = 2 + 3 * 4; return x; }
 ```
 
-IR (pliage) :
-```
-LoadConstant $temp0 = 14      Copy x = $temp0      Copy $return = x
-```
+Le pliage supprime les **opérations** (`imull`, `addl`) ; chaque constante reste
+un `LoadConstant`. Le `14` est calculé à la compilation :
 
-Assembleur :
 ```asm
 main:
-    pushq %rbp ; movq %rsp, %rbp ; subq $16, %rsp
-    movl $14, -8(%rbp)       # x
-    movl -8(%rbp), %eax      # $return = x
+    pushq %rbp ; movq %rsp, %rbp ; subq $32, %rsp
+    movl $0,  -4(%rbp)       # $return = 0
+    movl $2,  -8(%rbp)       # $temp0 = 2
+    movl $3,  -12(%rbp)      # $temp1 = 3
+    movl $4,  -16(%rbp)      # $temp2 = 4
+    movl $12, -20(%rbp)      # $temp3 = 12   ← 3*4 plié (pas d'imull)
+    movl $14, -24(%rbp)      # $temp4 = 14   ← 2+12 plié (pas d'addl)
+    movl -24(%rbp), %eax     # x = $temp4 ; puis $return = x
+    movl %eax, -28(%rbp) ; movl -28(%rbp), %eax ; movl %eax, -4(%rbp)
     leave ; ret              # → code de sortie 14
 ```
 
