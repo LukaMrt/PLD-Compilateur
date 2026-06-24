@@ -137,6 +137,9 @@ docker-clean: docker-build
 docker-asm: docker-build
 	@$(DOCKER_RUN) make asm FILE=$(FILE)
 
+docker-run: docker-build
+	@$(DOCKER_RUN) sh -c "make && ./build/ifcc $(FILE) > /tmp/out.s && gcc -o /tmp/out /tmp/out.s && /tmp/out; echo \"Exit code: $$?\""
+
 docker-gui: docker-build
 	@$(DOCKER_RUN) make gui FILE=$(FILE)
 
@@ -145,4 +148,4 @@ demo: docker-build
 
 re: clean all
 
-.PHONY: docker-build docker docker-test docker-test-one docker-clean docker-asm docker-gcc-asm docker-gui demo test clean re
+.PHONY: docker-build docker docker-test docker-test-one docker-clean docker-asm docker-gcc-asm docker-gui docker-run demo test clean re

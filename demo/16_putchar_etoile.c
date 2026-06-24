@@ -86,7 +86,7 @@ void cone(int size)
     while (count < size) {
         draw_space_side(size);
         draw_space_star(size - count - 1);
-        //draw_space_star(2 * count - 1);
+        draw_space_star(2 * count - 1);
         putchar('\n');
         count = count + 1;
     }
